@@ -21,6 +21,7 @@ const (
 	RBrace    = "}"
 	LBracket  = "["
 	RBracket  = "]"
+	Colon     = ":"
 	Comma     = ","
 	Dot       = "."
 	Minus     = "-"
