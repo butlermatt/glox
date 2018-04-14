@@ -1,13 +1,33 @@
 package lexer
 
-import "github.com/butlermatt/glpc/token"
+import "strconv"
 
 type Lexer struct {
 	input   string
-	tokens  []token.Token
-	start   int
-	current int
-	line    int
+	tokens  []*Token
+	start   int // Start of current token
+	current int // Current position
+	line    int // Current line
+	index   int // token index in tokens.
+}
+
+var keywords = map[string]TokenType{
+	"and":    And,
+	"class":  Class,
+	"else":   Else,
+	"false":  False,
+	"fun":    Fun,
+	"for":    For,
+	"if":     If,
+	"null":   Null,
+	"or":     Or,
+	"print":  Print,
+	"return": Return,
+	"super":  Super,
+	"this":   This,
+	"true":   True,
+	"var":    Var,
+	"while":  While,
 }
 
 func isAlpha(ch byte) bool {
@@ -33,6 +53,19 @@ func (l *Lexer) ScanTokens() {
 		l.start = l.current
 		l.scanToken()
 	}
+
+	l.tokens = append(l.tokens, NewToken(EOF, "", nil, l.line))
+}
+
+// NextToken steps through the input to generate the next token
+func (l *Lexer) NextToken() *Token {
+	if l.index >= len(l.tokens) {
+		return nil
+	}
+
+	tok := l.tokens[l.index]
+	l.index += 1
+	return tok
 }
 
 func (l *Lexer) isAtEnd() bool {
@@ -45,15 +78,31 @@ func (l *Lexer) readChar() byte {
 	return ch
 }
 
-func (l *Lexer) peekChar() byte {
+func (l *Lexer) match(expected byte) bool {
+	if l.isAtEnd() || l.input[l.current] != expected {
+		return false
+	}
+
+	l.current += 1
+	return true
+}
+
+func (l *Lexer) peek() byte {
 	if l.current >= len(l.input) {
 		return 0
 	}
 	return l.input[l.current]
 }
 
-func (l *Lexer) addToken(ty token.TokenType, literal interface{}) {
-	l.tokens = append(l.tokens, token.New(ty, l.input[l.start:l.current], literal, l.line))
+func (l *Lexer) peekNext() byte {
+	if l.current+1 >= len(l.input) {
+		return 0
+	}
+	return l.input[l.current+1]
+}
+
+func (l *Lexer) addToken(ty TokenType, literal interface{}) {
+	l.tokens = append(l.tokens, NewToken(ty, l.input[l.start:l.current], literal, l.line))
 }
 
 func (l *Lexer) scanToken() {
@@ -64,67 +113,143 @@ func (l *Lexer) scanToken() {
 	case '\n': // Whitespace, but we want the new line.
 		l.line += 1
 	case ';':
-		l.addToken(token.Semicolon, nil)
+		l.addToken(Semicolon, nil)
 	case ':':
-		l.addToken(token.Colon, nil)
+		l.addToken(Colon, nil)
 	case '(':
-		l.addToken(token.LParen, nil)
+		l.addToken(LParen, nil)
 	case ')':
-		l.addToken(token.RParen, nil)
+		l.addToken(RParen, nil)
 	case '[':
-		l.addToken(token.LBracket, nil)
+		l.addToken(LBracket, nil)
 	case ']':
-		l.addToken(token.RBracket, nil)
+		l.addToken(RBracket, nil)
 	case '{':
-		l.addToken(token.LBrace, nil)
+		l.addToken(LBrace, nil)
 	case '}':
-		l.addToken(token.RBrace, nil)
+		l.addToken(RBrace, nil)
+	case ',':
+		l.addToken(Comma, nil)
+	case '.':
+		l.addToken(Dot, nil)
 	case '+':
-		l.addToken(token.Plus, nil)
+		l.addToken(Plus, nil)
 	case '-':
-		l.addToken(token.Minus, nil)
+		l.addToken(Minus, nil)
 	case '*':
-		l.addToken(token.Star, nil)
+		l.addToken(Star, nil)
 	case '/':
-		if l.peekChar() == '/' {
-			for l.peekChar() != '\n' && l.peekChar() != 0 {
+		if l.match('/') {
+			for l.peek() != '\n' && l.peek() != 0 {
 				l.readChar()
 			}
 		} else {
-			l.addToken(token.Slash, nil)
+			l.addToken(Slash, nil)
 		}
 	case '=':
-		if l.peekChar() == '=' {
-			l.addToken(token.EqualEq, nil)
+		if l.match('=') {
+			l.addToken(EqualEq, nil)
 		} else {
-			l.addToken(token.Equal, nil)
+			l.addToken(Equal, nil)
 		}
 	case '>':
-		if l.peekChar() == '=' {
-			l.addToken(token.GreaterEq, nil)
+		if l.match('=') {
+			l.addToken(GreaterEq, nil)
 		} else {
-			l.addToken(token.Greater, nil)
+			l.addToken(Greater, nil)
 		}
 	case '<':
-		if l.peekChar() == '=' {
-			l.addToken(token.LessEq, nil)
+		if l.match('=') {
+			l.addToken(LessEq, nil)
 		} else {
-			l.addToken(token.Less, nil)
+			l.addToken(Less, nil)
 		}
 	case '!':
-		if l.peekChar() == '=' {
-			l.addToken(token.BangEq, nil)
+		if l.match('=') {
+			l.addToken(BangEq, nil)
 		} else {
-			l.addToken(token.Bang, nil)
+			l.addToken(Bang, nil)
+		}
+	case '"':
+		l.string()
+	case '`':
+		l.rawString()
+	default:
+		if isDigit(c) {
+			l.number()
+		} else if isAlpha(c) {
+			l.identifier()
+		} else {
+			l.addToken(Illegal, nil)
 		}
 	}
 }
 
-// NextToken steps through the input to generate the next token
-func (l *Lexer) NextToken() token.Token {
-	var tok token.Token
+func (l *Lexer) string() {
+	for l.peek() != '"' && l.peek() != '\n' && !l.isAtEnd() {
+		l.readChar()
+	}
 
-	// TODO (iterate through tokens that are in the slice
+	if l.isAtEnd() || l.peek() == '\n' {
+		l.addToken(UTString, l.input[l.start+1:l.current])
+		return
+	}
 
-	return tok
+	l.readChar()
+	l.addToken(String, l.input[l.start+1:l.current-1])
+}
+
+func (l *Lexer) rawString() {
+	line := l.line
+
+	for l.peek() != '`' && !l.isAtEnd() {
+		if l.peek() == '\n' {
+			l.line += 1
+		}
+
+		l.readChar()
+	}
+
+	if l.isAtEnd() {
+		// Error points to line at start of string not end of string.
+		l.tokens = append(l.tokens, NewToken(UTString, l.input[l.start:l.current], l.input[l.start:l.current], line))
+		return
+	}
+
+	l.readChar()
+	l.tokens = append(l.tokens, NewToken(String, l.input[l.start:l.current], l.input[l.start+1:l.current-1], line))
+}
+
+func (l *Lexer) number() {
+	for isDigit(l.peek()) {
+		l.readChar()
+	}
+
+	if l.peek() == '.' && isDigit(l.peekNext()) {
+		l.readChar()
+
+		for isDigit(l.peek()) {
+			l.readChar()
+		}
+	}
+
+	value, err := strconv.ParseFloat(l.input[l.start:l.current], 64)
+	if err != nil {
+		l.addToken(Illegal, nil)
+		return
+	}
+	l.addToken(Number, value)
+}
+
+func (l *Lexer) identifier() {
+	for isAlphaNumeric(l.peek()) {
+		l.readChar()
+	}
+
+	text := l.input[l.start:l.current]
+	if tokenType, ok := keywords[text]; ok {
+		l.addToken(tokenType, nil)
+	} else {
+		l.addToken(Ident, nil)
+	}
 }

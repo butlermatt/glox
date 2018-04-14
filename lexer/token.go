@@ -1,4 +1,4 @@
-package token
+package lexer
 
 type TokenType string
 
@@ -9,8 +9,8 @@ type Token struct {
 	Line    int
 }
 
-func New(ty TokenType, lex string, lit interface{}, line int) Token {
-	return Token{Type: ty, Lexeme: lex, Literal: lit, Line: line}
+func NewToken(ty TokenType, lex string, lit interface{}, line int) *Token {
+	return &Token{Type: ty, Lexeme: lex, Literal: lit, Line: line}
 }
 
 const (
@@ -64,6 +64,6 @@ const (
 	Var    = "VAR"
 	While  = "WHILE"
 
+	Illegal = "ILLEGAL"
 	EOF     = "EOF"
-	ILLEGAL = "ILLEGAL"
 )
