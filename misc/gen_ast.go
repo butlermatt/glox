@@ -41,11 +41,11 @@ func defineAst(outDir string, expr []string, stmt []string) error {
 	checkWrite(file, "import \"github.com/butlermatt/glpc/lexer\"\n")
 	checkWrite(file,
 		`type Expr interface {
-	Accept(ExprVisitor) interface{}
+	Accept(ExprVisitor) (interface{}, error)
 }
 
 type Stmt interface {
-	Accept(StmtVisitor) interface{}
+	Accept(StmtVisitor) (interface{}, error)
 }`)
 
 	checkWrite(file, "\n")
@@ -80,7 +80,7 @@ func defineType(file *os.File, ndType, structName, fieldStr string) error {
 	checkWrite(file, "}\n")
 
 	ptr := strings.ToLower(structName[0:1])
-	return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) interface{} { return visitor.Visit%[2]s(%[1]s) }", ptr, structName, ndType)
+	return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) (interface{}, error) { return visitor.Visit%[2]s(%[1]s) }", ptr, structName, ndType)
 }
 
 func defineVisitor(file *os.File, ndType string, types []string) error {
@@ -88,7 +88,7 @@ func defineVisitor(file *os.File, ndType string, types []string) error {
 
 	for _, ty := range types {
 		lower := strings.ToLower(ty)
-		checkWrite(file, "\tVisit%s(%s *%[1]s) interface{}", ty, lower)
+		checkWrite(file, "\tVisit%s(%s *%[1]s) (interface{}, error)", ty, lower)
 	}
 	return checkWrite(file, "}")
 }
