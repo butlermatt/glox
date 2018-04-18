@@ -1,12 +1,10 @@
 package interpreter
 
 import (
+	"fmt"
 	"github.com/butlermatt/glpc/lexer"
 	"github.com/butlermatt/glpc/parser"
 )
-
-type Interpreter struct {
-}
 
 type RuntimeError struct {
 	Token   *lexer.Token
@@ -14,7 +12,23 @@ type RuntimeError struct {
 }
 
 func (re *RuntimeError) Error() string {
-	return re.Message
+	return fmt.Sprintf("[Runtime Error line %d] %s", re.Token.Line, re.Message)
+}
+
+type Interpreter struct {
+}
+
+func (i *Interpreter) Interpret(expr parser.Expr) (string, error) {
+	res, err := i.evaluate(expr)
+	if err != nil {
+		return "", err
+	}
+
+	if res == nil {
+		return "null", nil
+	}
+
+	return fmt.Sprintf("%v", res), nil
 }
 
 func (i *Interpreter) VisitBinary(binary *parser.Binary) (interface{}, error) {

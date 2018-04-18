@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/butlermatt/glpc/interpreter"
 	"github.com/butlermatt/glpc/lexer"
 	"github.com/butlermatt/glpc/parser"
 	"io/ioutil"
@@ -28,7 +29,11 @@ func runFile(path string) {
 		os.Exit(1)
 	}
 
-	run(string(data))
+	err = run(string(data))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(70)
+	}
 }
 
 func runPrompt() {
@@ -37,11 +42,14 @@ func runPrompt() {
 	fmt.Printf("> ")
 	for b.Scan() {
 		fmt.Printf("> ")
-		run(b.Text())
+		err := run(b.Text())
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
-func run(input string) {
+func run(input string) error {
 	l := lexer.New(input)
 	p := parser.New(l)
 
@@ -51,9 +59,17 @@ func run(input string) {
 		for _, e := range errs {
 			fmt.Printf("[Line %d] Error %s: %s\n", e.Line, e.Where, e.Msg)
 		}
-		return
+		return fmt.Errorf("%d syntax errors", len(errs))
 	}
 
-	ap := &parser.AstPrinter{}
-	fmt.Println(ap.Print(exp))
+	//ap := &parser.AstPrinter{}
+	//fmt.Println(ap.Print(exp))
+	interp := &interpreter.Interpreter{}
+	result, err := interp.Interpret(exp)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(result)
+	return nil
 }
