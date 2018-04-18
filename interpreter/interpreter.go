@@ -82,6 +82,9 @@ func (i *Interpreter) VisitBinary(binary *parser.Binary) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+		if r == 0 {
+			return nil, newError(binary.Operator, "Division by zero.")
+		}
 		return l / r, nil
 	case lexer.Star:
 		l, r, err := checkNumberOperands(binary.Operator, left, right)

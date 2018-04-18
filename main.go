@@ -57,7 +57,7 @@ func run(input string) error {
 	errs := p.Errors()
 	if len(errs) > 0 {
 		for _, e := range errs {
-			fmt.Printf("[Line %d] Error %s: %s\n", e.Line, e.Where, e.Msg)
+			fmt.Printf("[Syntax Error line %d] Error %s: %s\n", e.Line, e.Where, e.Msg)
 		}
 		return fmt.Errorf("%d syntax errors", len(errs))
 	}
