@@ -53,7 +53,7 @@ func run(input string) error {
 	l := lexer.New(input)
 	p := parser.New(l)
 
-	exp := p.Parse()
+	stmts := p.Parse()
 	errs := p.Errors()
 	if len(errs) > 0 {
 		for _, e := range errs {
@@ -62,14 +62,11 @@ func run(input string) error {
 		return fmt.Errorf("%d syntax errors", len(errs))
 	}
 
-	//ap := &parser.AstPrinter{}
-	//fmt.Println(ap.Print(exp))
 	interp := &interpreter.Interpreter{}
-	result, err := interp.Interpret(exp)
+	err := interp.Interpret(stmts)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(result)
 	return nil
 }

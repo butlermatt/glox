@@ -29,8 +29,13 @@ func (p *Parser) Errors() []ParseError {
 	return p.errors
 }
 
-func (p *Parser) Parse() Expr {
-	return p.expression()
+func (p *Parser) Parse() []Stmt {
+	var stmts []Stmt
+	for p.curTok.Type != lexer.EOF {
+		stmts = append(stmts, p.statement())
+	}
+
+	return stmts
 }
 
 func (p *Parser) addError(token *lexer.Token, message string) {
@@ -93,7 +98,7 @@ func (p *Parser) equality() Expr {
 		if right == nil {
 			return nil
 		}
-		exp = &Binary{Left: exp, Operator: oper, Right: right}
+		exp = &BinaryExpr{Left: exp, Operator: oper, Right: right}
 	}
 
 	return exp
@@ -111,7 +116,7 @@ func (p *Parser) comparison() Expr {
 		if right == nil {
 			return nil
 		}
-		exp = &Binary{Left: exp, Operator: oper, Right: right}
+		exp = &BinaryExpr{Left: exp, Operator: oper, Right: right}
 	}
 
 	return exp
@@ -129,7 +134,7 @@ func (p *Parser) addition() Expr {
 		if right == nil {
 			return nil
 		}
-		exp = &Binary{Left: exp, Operator: oper, Right: right}
+		exp = &BinaryExpr{Left: exp, Operator: oper, Right: right}
 	}
 
 	return exp
@@ -147,7 +152,7 @@ func (p *Parser) multiplication() Expr {
 		if right == nil {
 			return nil
 		}
-		exp = &Binary{Left: exp, Operator: oper, Right: right}
+		exp = &BinaryExpr{Left: exp, Operator: oper, Right: right}
 	}
 
 	return exp
@@ -160,7 +165,7 @@ func (p *Parser) unary() Expr {
 		if right == nil {
 			return nil
 		}
-		return &Unary{Operator: oper, Right: right}
+		return &UnaryExpr{Operator: oper, Right: right}
 	}
 
 	return p.primary()
@@ -169,20 +174,20 @@ func (p *Parser) unary() Expr {
 func (p *Parser) primary() Expr {
 	switch {
 	case p.match(lexer.False):
-		return &Literal{Value: false}
+		return &LiteralExpr{Value: false}
 	case p.match(lexer.True):
-		return &Literal{Value: true}
+		return &LiteralExpr{Value: true}
 	case p.match(lexer.Null):
-		return &Literal{Value: nil}
+		return &LiteralExpr{Value: nil}
 	case p.match(lexer.Number, lexer.String):
-		return &Literal{Value: p.prevTok.Literal}
+		return &LiteralExpr{Value: p.prevTok.Literal}
 	case p.match(lexer.LParen):
 		exp := p.expression()
 		if exp == nil {
 			return nil
 		}
 		if p.consume(lexer.RParen, "Expect ')' after expression.") {
-			return &Grouping{Expression: exp}
+			return &GroupingExpr{Expression: exp}
 		}
 	}
 
@@ -212,4 +217,24 @@ func (p *Parser) synchronize() {
 
 		p.nextToken()
 	}
+}
+
+func (p *Parser) statement() Stmt {
+	if p.match(lexer.Print) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() Stmt {
+	value := p.expression()
+	p.consume(lexer.Semicolon, "Expect ';' after value.")
+	return &PrintStmt{Expression: value}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.expression()
+	p.consume(lexer.Semicolon, "Expect ';' after value.")
+	return &ExpressionStmt{Expression: expr}
 }

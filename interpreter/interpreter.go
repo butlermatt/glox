@@ -18,20 +18,23 @@ func (re *RuntimeError) Error() string {
 type Interpreter struct {
 }
 
-func (i *Interpreter) Interpret(expr parser.Expr) (string, error) {
-	res, err := i.evaluate(expr)
-	if err != nil {
-		return "", err
+func (i *Interpreter) Interpret(stmts []parser.Stmt) error {
+	for _, stmt := range stmts {
+		err := i.execute(stmt)
+		if err != nil {
+			return err
+		}
 	}
 
-	if res == nil {
-		return "null", nil
-	}
-
-	return fmt.Sprintf("%v", res), nil
+	return nil
 }
 
-func (i *Interpreter) VisitBinary(binary *parser.Binary) (interface{}, error) {
+func (i *Interpreter) execute(stmt parser.Stmt) error {
+	_, err := stmt.Accept(i)
+	return err
+}
+
+func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, error) {
 	left, err := i.evaluate(binary.Left)
 	if err != nil {
 		return nil, err
@@ -114,14 +117,14 @@ func (i *Interpreter) VisitBinary(binary *parser.Binary) (interface{}, error) {
 	return nil, nil // Should never reach
 }
 
-func (i *Interpreter) VisitGrouping(grouping *parser.Grouping) (interface{}, error) {
+func (i *Interpreter) VisitGroupingExpr(grouping *parser.GroupingExpr) (interface{}, error) {
 	return i.evaluate(grouping)
 }
 
-func (i *Interpreter) VisitLiteral(literal *parser.Literal) (interface{}, error) {
+func (i *Interpreter) VisitLiteralExpr(literal *parser.LiteralExpr) (interface{}, error) {
 	return literal.Value, nil
 }
-func (i *Interpreter) VisitUnary(unary *parser.Unary) (interface{}, error) {
+func (i *Interpreter) VisitUnaryExpr(unary *parser.UnaryExpr) (interface{}, error) {
 	right, err := i.evaluate(unary.Right)
 	if err != nil {
 		return nil, err
@@ -144,6 +147,20 @@ func (i *Interpreter) VisitUnary(unary *parser.Unary) (interface{}, error) {
 
 func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
 	return expr.Accept(i)
+}
+
+func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) (interface{}, error) {
+	i.evaluate(stmt.Expression)
+	return nil, nil
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) (interface{}, error) {
+	val, err := i.evaluate(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(stringify(val))
+	return nil, nil
 }
 
 func isTruthy(value interface{}) bool {
@@ -207,4 +224,12 @@ func isEqual(left, right interface{}) (bool, error) {
 
 func newError(token *lexer.Token, message string) *RuntimeError {
 	return &RuntimeError{Token: token, Message: message}
+}
+
+func stringify(inter interface{}) string {
+	if inter == nil {
+		return "null"
+	}
+
+	return fmt.Sprintf("%v", inter)
 }

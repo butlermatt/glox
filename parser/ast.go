@@ -6,41 +6,53 @@ type Expr interface {
 	Accept(ExprVisitor) (interface{}, error)
 }
 
-//
-//type Stmt interface {
-//	Accept(StmtVisitor) interface{}
-//}
-
-type Binary struct {
-	Left     Expr
-	Operator *lexer.Token
-	Right    Expr
+type Stmt interface {
+	Accept(StmtVisitor) (interface{}, error)
 }
 
-func (b *Binary) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitBinary(b) }
 
-type Grouping struct {
+type BinaryExpr struct {
+	Left Expr
+	Operator *lexer.Token
+	Right Expr
+}
+
+func (b *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitBinaryExpr(b) }
+type GroupingExpr struct {
 	Expression Expr
 }
 
-func (g *Grouping) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitGrouping(g) }
-
-type Literal struct {
+func (g *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitGroupingExpr(g) }
+type LiteralExpr struct {
 	Value interface{}
 }
 
-func (l *Literal) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitLiteral(l) }
-
-type Unary struct {
+func (l *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitLiteralExpr(l) }
+type UnaryExpr struct {
 	Operator *lexer.Token
-	Right    Expr
+	Right Expr
 }
 
-func (u *Unary) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitUnary(u) }
+func (u *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitUnaryExpr(u) }
 
 type ExprVisitor interface {
-	VisitBinary(binary *Binary) (interface{}, error)
-	VisitGrouping(grouping *Grouping) (interface{}, error)
-	VisitLiteral(literal *Literal) (interface{}, error)
-	VisitUnary(unary *Unary) (interface{}, error)
+	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
+	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
+	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
+	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
+}
+type ExpressionStmt struct {
+	Expression Expr
+}
+
+func (e *ExpressionStmt) Accept(visitor StmtVisitor) (interface{}, error) { return visitor.VisitExpressionStmt(e) }
+type PrintStmt struct {
+	Expression Expr
+}
+
+func (p *PrintStmt) Accept(visitor StmtVisitor) (interface{}, error) { return visitor.VisitPrintStmt(p) }
+
+type StmtVisitor interface {
+	VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, error)
+	VisitPrintStmt(stmt *PrintStmt) (interface{}, error)
 }

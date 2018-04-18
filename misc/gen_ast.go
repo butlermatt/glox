@@ -21,7 +21,10 @@ func main() {
 		"Unary : Operator *lexer.Token, Right Expr",
 	}
 
-	statements := []string{}
+	statements := []string{
+		"Expression : Expression Expr",
+		"Print : Expression Expr",
+	}
 
 	err := defineAst(outDir, expressions, statements)
 	if err != nil {
@@ -66,11 +69,26 @@ type Stmt interface {
 		return err
 	}
 
+	var stmtNames []string
+	for _, st := range stmt {
+		structInfo := strings.Split(st, ":")
+		structName := strings.TrimSpace(structInfo[0])
+		stmtNames = append(stmtNames, structName)
+		err := defineType(file, "Stmt", structName, structInfo[1])
+		if err != nil {
+			return err
+		}
+	}
+	err = defineVisitor(file, "Stmt", stmtNames)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func defineType(file *os.File, ndType, structName, fieldStr string) error {
-	checkWrite(file, "type %s struct {", structName)
+	checkWrite(file, "type %s struct {", structName+ndType)
 
 	fields := strings.Split(fieldStr, ", ")
 	for _, field := range fields {
@@ -80,15 +98,15 @@ func defineType(file *os.File, ndType, structName, fieldStr string) error {
 	checkWrite(file, "}\n")
 
 	ptr := strings.ToLower(structName[0:1])
-	return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) (interface{}, error) { return visitor.Visit%[2]s(%[1]s) }", ptr, structName, ndType)
+	return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) (interface{}, error) { return visitor.Visit%[2]s(%[1]s) }", ptr, structName+ndType, ndType)
 }
 
 func defineVisitor(file *os.File, ndType string, types []string) error {
 	checkWrite(file, "\ntype %sVisitor interface {", ndType)
 
 	for _, ty := range types {
-		lower := strings.ToLower(ty)
-		checkWrite(file, "\tVisit%s(%s *%[1]s) (interface{}, error)", ty, lower)
+		lower := strings.ToLower(ndType)
+		checkWrite(file, "\tVisit%s(%s *%[1]s) (interface{}, error)", ty+ndType, lower)
 	}
 	return checkWrite(file, "}")
 }
