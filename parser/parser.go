@@ -243,6 +243,9 @@ func (p *Parser) statement() Stmt {
 	if p.match(lexer.Print) {
 		return p.printStatement()
 	}
+	if p.match(lexer.LBrace) {
+		return &BlockStmt{Statements: p.block()}
+	}
 
 	return p.expressionStatement()
 }
@@ -257,6 +260,17 @@ func (p *Parser) expressionStatement() Stmt {
 	expr := p.expression()
 	p.consume(lexer.Semicolon, "Expect ';' after value.")
 	return &ExpressionStmt{Expression: expr}
+}
+
+func (p *Parser) block() []Stmt {
+	var stmts []Stmt
+
+	for !p.check(lexer.RBrace) && p.curTok.Type != lexer.EOF {
+		stmts = append(stmts, p.declaration())
+	}
+
+	p.consume(lexer.RBrace, "Expect '}' after block.")
+	return stmts
 }
 
 func (p *Parser) declaration() Stmt {

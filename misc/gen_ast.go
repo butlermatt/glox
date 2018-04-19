@@ -24,6 +24,7 @@ func main() {
 	}
 
 	statements := []string{
+		"Block : Statements []Stmt",
 		"Expression : Expression Expr",
 		"Print : Expression Expr",
 		"Var : Name *lexer.Token, Initializer Expr",

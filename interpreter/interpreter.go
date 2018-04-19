@@ -199,6 +199,25 @@ func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) error {
 	return nil
 }
 
+func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) error {
+	return i.executeBlock(stmt.Statements, NewEnclosedEnvironment(i.environment))
+}
+
+func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {
+	prev := i.environment
+	i.environment = env
+	var err error
+	for _, stmt := range statements {
+		err = i.execute(stmt)
+		if err != nil {
+			break
+		}
+	}
+
+	i.environment = prev
+	return err
+}
+
 func isTruthy(value interface{}) bool {
 	if value == nil {
 		return false

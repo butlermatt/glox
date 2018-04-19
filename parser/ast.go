@@ -60,6 +60,12 @@ type ExprVisitor interface {
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
 	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
 }
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (b *BlockStmt) Accept(visitor StmtVisitor) error { return visitor.VisitBlockStmt(b) }
+
 type ExpressionStmt struct {
 	Expression Expr
 }
@@ -81,6 +87,7 @@ func (v *VarStmt) Accept(visitor StmtVisitor) error { return visitor.VisitVarStm
 
 
 type StmtVisitor interface {
+	VisitBlockStmt(stmt *BlockStmt) error
 	VisitExpressionStmt(stmt *ExpressionStmt) error
 	VisitPrintStmt(stmt *PrintStmt) error
 	VisitVarStmt(stmt *VarStmt) error
