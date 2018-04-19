@@ -32,7 +32,7 @@ func (p *Parser) Errors() []ParseError {
 func (p *Parser) Parse() []Stmt {
 	var stmts []Stmt
 	for p.curTok.Type != lexer.EOF {
-		stmts = append(stmts, p.statement())
+		stmts = append(stmts, p.declaration())
 	}
 
 	return stmts
@@ -83,7 +83,25 @@ func (p *Parser) consume(tt lexer.TokenType, message string) bool {
 }
 
 func (p *Parser) expression() Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() Expr {
+	expr := p.equality()
+
+	if p.match(lexer.Equal) {
+		equals := p.prevTok
+		value := p.assignment()
+
+		if e, ok := expr.(*VariableExpr); ok {
+			return &AssignExpr{Name: e.Name, Value: value}
+		}
+
+		p.addError(equals, "Invalid assignment target.")
+		return nil
+	}
+
+	return expr
 }
 
 func (p *Parser) equality() Expr {
@@ -181,6 +199,8 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: nil}
 	case p.match(lexer.Number, lexer.String):
 		return &LiteralExpr{Value: p.prevTok.Literal}
+	case p.match(lexer.Ident):
+		return &VariableExpr{Name: p.prevTok}
 	case p.match(lexer.LParen):
 		exp := p.expression()
 		if exp == nil {
@@ -237,4 +257,34 @@ func (p *Parser) expressionStatement() Stmt {
 	expr := p.expression()
 	p.consume(lexer.Semicolon, "Expect ';' after value.")
 	return &ExpressionStmt{Expression: expr}
+}
+
+func (p *Parser) declaration() Stmt {
+	var stmt Stmt
+	if p.match(lexer.Var) {
+		stmt = p.varDeclaration()
+	} else {
+		stmt = p.statement()
+	}
+
+	if len(p.errors) > 0 {
+		p.synchronize()
+		return nil
+	}
+	return stmt
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	if !p.consume(lexer.Ident, "Expect variable name.") {
+		return nil
+	}
+	name := p.prevTok
+
+	var initializer Expr
+	if p.match(lexer.Equal) {
+		initializer = p.expression()
+	}
+
+	p.consume(lexer.Semicolon, "Expect ';' after variable declaration.")
+	return &VarStmt{Name: name, Initializer: initializer}
 }

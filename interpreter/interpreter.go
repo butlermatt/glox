@@ -16,10 +16,16 @@ func (re *RuntimeError) Error() string {
 }
 
 type Interpreter struct {
+	stmts       []parser.Stmt
+	environment *Environment
 }
 
-func (i *Interpreter) Interpret(stmts []parser.Stmt) error {
-	for _, stmt := range stmts {
+func New(statements []parser.Stmt) *Interpreter {
+	return &Interpreter{stmts: statements, environment: NewEnvironment()}
+}
+
+func (i *Interpreter) Interpret() error {
+	for _, stmt := range i.stmts {
 		err := i.execute(stmt)
 		if err != nil {
 			return err
@@ -30,8 +36,7 @@ func (i *Interpreter) Interpret(stmts []parser.Stmt) error {
 }
 
 func (i *Interpreter) execute(stmt parser.Stmt) error {
-	_, err := stmt.Accept(i)
-	return err
+	return stmt.Accept(i)
 }
 
 func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, error) {
@@ -145,22 +150,53 @@ func (i *Interpreter) VisitUnaryExpr(unary *parser.UnaryExpr) (interface{}, erro
 	return nil, nil
 }
 
+func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) (interface{}, error) {
+	return i.environment.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) (interface{}, error) {
+	value, err := i.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.environment.Assign(expr.Name, value)
+	if err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
 func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
 	return expr.Accept(i)
 }
 
-func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) (interface{}, error) {
+func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) error {
 	i.evaluate(stmt.Expression)
-	return nil, nil
+	return nil
 }
 
-func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) (interface{}, error) {
+func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) error {
 	val, err := i.evaluate(stmt.Expression)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	fmt.Println(stringify(val))
-	return nil, nil
+	return nil
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) error {
+	var value interface{}
+	var err error
+	if stmt.Initializer != nil {
+		value, err = i.evaluate(stmt.Initializer)
+		if err != nil {
+			return err
+		}
+	}
+
+	i.environment.Define(stmt.Name, value)
+	return nil
 }
 
 func isTruthy(value interface{}) bool {

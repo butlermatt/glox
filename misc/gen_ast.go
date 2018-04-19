@@ -15,15 +15,18 @@ func main() {
 	outDir := os.Args[1]
 
 	expressions := []string{
+		"Assign : Name *lexer.Token, Value Expr",
 		"Binary : Left Expr, Operator *lexer.Token, Right Expr",
 		"Grouping : Expression Expr",
 		"Literal : Value interface{}",
 		"Unary : Operator *lexer.Token, Right Expr",
+		"Variable : Name *lexer.Token",
 	}
 
 	statements := []string{
 		"Expression : Expression Expr",
 		"Print : Expression Expr",
+		"Var : Name *lexer.Token, Initializer Expr",
 	}
 
 	err := defineAst(outDir, expressions, statements)
@@ -48,7 +51,7 @@ func defineAst(outDir string, expr []string, stmt []string) error {
 }
 
 type Stmt interface {
-	Accept(StmtVisitor) (interface{}, error)
+	Accept(StmtVisitor) error
 }`)
 
 	checkWrite(file, "\n")
@@ -98,7 +101,11 @@ func defineType(file *os.File, ndType, structName, fieldStr string) error {
 	checkWrite(file, "}\n")
 
 	ptr := strings.ToLower(structName[0:1])
-	return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) (interface{}, error) { return visitor.Visit%[2]s(%[1]s) }", ptr, structName+ndType, ndType)
+	if ndType == "Expr" {
+		return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) (interface{}, error) { return visitor.Visit%[2]s(%[1]s) }\n", ptr, structName+ndType, ndType)
+	} else {
+		return checkWrite(file, "func (%s *%s) Accept(visitor %sVisitor) error { return visitor.Visit%[2]s(%[1]s) }\n", ptr, structName+ndType, ndType)
+	}
 }
 
 func defineVisitor(file *os.File, ndType string, types []string) error {
@@ -106,7 +113,11 @@ func defineVisitor(file *os.File, ndType string, types []string) error {
 
 	for _, ty := range types {
 		lower := strings.ToLower(ndType)
-		checkWrite(file, "\tVisit%s(%s *%[1]s) (interface{}, error)", ty+ndType, lower)
+		if ndType == "Expr" {
+			checkWrite(file, "\tVisit%s(%s *%[1]s) (interface{}, error)", ty+ndType, lower)
+		} else {
+			checkWrite(file, "\tVisit%s(%s *%[1]s) error", ty+ndType, lower)
+		}
 	}
 	return checkWrite(file, "}")
 }

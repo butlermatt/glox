@@ -62,8 +62,8 @@ func run(input string) error {
 		return fmt.Errorf("%d syntax errors", len(errs))
 	}
 
-	interp := &interpreter.Interpreter{}
-	err := interp.Interpret(stmts)
+	interp := interpreter.New(stmts)
+	err := interp.Interpret()
 	if err != nil {
 		return err
 	}
