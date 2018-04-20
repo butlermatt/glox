@@ -167,6 +167,25 @@ func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) (interface{}, err
 	return value, nil
 }
 
+func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) (interface{}, error) {
+	left, err := i.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.Type == lexer.Or {
+		if isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !isTruthy(left) {
+			return left, nil
+		}
+	}
+
+	return i.evaluate(expr.Right)
+}
+
 func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
 	return expr.Accept(i)
 }
@@ -201,6 +220,22 @@ func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) error {
 
 func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) error {
 	return i.executeBlock(stmt.Statements, NewEnclosedEnvironment(i.environment))
+}
+
+func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) error {
+	cond, err := i.evaluate(stmt.Condition)
+	if err != nil {
+		return err
+	}
+
+	if isTruthy(cond) {
+		return i.execute(stmt.Then)
+	}
+	if stmt.Else != nil {
+		return i.execute(stmt.Else)
+	}
+
+	return nil
 }
 
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {

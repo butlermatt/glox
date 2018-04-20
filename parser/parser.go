@@ -87,7 +87,7 @@ func (p *Parser) expression() Expr {
 }
 
 func (p *Parser) assignment() Expr {
-	expr := p.equality()
+	expr := p.or()
 
 	if p.match(lexer.Equal) {
 		equals := p.prevTok
@@ -99,6 +99,30 @@ func (p *Parser) assignment() Expr {
 
 		p.addError(equals, "Invalid assignment target.")
 		return nil
+	}
+
+	return expr
+}
+
+func (p *Parser) or() Expr {
+	expr := p.and()
+
+	for p.match(lexer.Or) {
+		oper := p.prevTok
+		right := p.and()
+		expr = &LogicalExpr{Left: expr, Operator: oper, Right: right}
+	}
+
+	return expr
+}
+
+func (p *Parser) and() Expr {
+	expr := p.equality()
+
+	for p.match(lexer.And) {
+		oper := p.prevTok
+		right := p.equality()
+		expr = &LogicalExpr{Left: expr, Operator: oper, Right: right}
 	}
 
 	return expr
@@ -240,14 +264,36 @@ func (p *Parser) synchronize() {
 }
 
 func (p *Parser) statement() Stmt {
-	if p.match(lexer.Print) {
+	switch {
+	case p.match(lexer.If):
+		return p.ifStatement()
+	case p.match(lexer.Print):
 		return p.printStatement()
-	}
-	if p.match(lexer.LBrace) {
+	case p.match(lexer.LBrace):
 		return &BlockStmt{Statements: p.block()}
 	}
 
 	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() Stmt {
+	if !p.consume(lexer.LParen, "Expect '(' after 'if'.") {
+		return nil
+	}
+
+	cond := p.expression()
+
+	if !p.consume(lexer.RParen, "Expect ')' after if condition.") {
+		return nil
+	}
+
+	thenBranch := p.statement()
+	var elseBranch Stmt
+
+	if p.match(lexer.Else) {
+		elseBranch = p.statement()
+	}
+	return &IfStmt{Condition: cond, Then: thenBranch, Else: elseBranch}
 }
 
 func (p *Parser) printStatement() Stmt {

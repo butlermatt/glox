@@ -19,6 +19,7 @@ func main() {
 		"Binary : Left Expr, Operator *lexer.Token, Right Expr",
 		"Grouping : Expression Expr",
 		"Literal : Value interface{}",
+		"Logical : Left Expr, Operator *lexer.Token, Right Expr",
 		"Unary : Operator *lexer.Token, Right Expr",
 		"Variable : Name *lexer.Token",
 	}
@@ -26,6 +27,7 @@ func main() {
 	statements := []string{
 		"Block : Statements []Stmt",
 		"Expression : Expression Expr",
+		"If : Condition Expr, Then Stmt, Else Stmt",
 		"Print : Expression Expr",
 		"Var : Name *lexer.Token, Initializer Expr",
 	}
