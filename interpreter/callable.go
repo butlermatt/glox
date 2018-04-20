@@ -22,6 +22,7 @@ func (b *BuiltIn) Call(interp *Interpreter, args []interface{}) (interface{}, er
 
 type Function struct {
 	declaration *parser.FunctionStmt
+	closure     *Environment
 }
 
 func (f *Function) Arity() int     { return len(f.declaration.Parameters) }
@@ -31,11 +32,21 @@ func (f *Function) Call(interp *Interpreter, args []interface{}) (interface{}, e
 		return nil, newError(f.declaration.Name, "Incorrect number of arguments passed.")
 	}
 
-	env := NewEnclosedEnvironment(interp.globals)
+	env := NewEnclosedEnvironment(f.closure)
 	for i, p := range f.declaration.Parameters {
 		env.Define(p, args[i])
 	}
 
-	interp.executeBlock(f.declaration.Body, env)
+	err := interp.executeBlock(f.declaration.Body, env)
+	if err != nil {
+		if e, ok := err.(*ReturnError); ok {
+			return e.Value, nil
+		}
+		return nil, err
+	}
 	return nil, nil
+}
+
+func NewFunction(declaration *parser.FunctionStmt, environment *Environment) *Function {
+	return &Function{declaration: declaration, closure: environment}
 }

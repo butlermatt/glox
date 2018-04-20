@@ -16,6 +16,15 @@ type RuntimeError struct {
 	Message string
 }
 
+type ReturnError struct {
+	RuntimeError
+	Value interface{}
+}
+
+func NewReturnError(keyword *lexer.Token, value interface{}) *ReturnError {
+	return &ReturnError{RuntimeError: RuntimeError{Token: keyword, Message: ""}, Value: value}
+}
+
 func (re *RuntimeError) Error() string {
 	return fmt.Sprintf("[Runtime Error line %d] %s", re.Token.Line, re.Message)
 }
@@ -324,9 +333,22 @@ func (i *Interpreter) VisitContinueStmt(stmt *parser.ContinueStmt) error {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) error {
-	fun := &Function{declaration: stmt}
+	fun := NewFunction(stmt, i.environment)
 	i.environment.Define(stmt.Name, fun)
 	return nil
+}
+
+func (i *Interpreter) VisitReturnStmt(stmt *parser.ReturnStmt) error {
+	var value interface{}
+	var err error
+	if stmt.Value != nil {
+		value, err = i.evaluate(stmt.Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return NewReturnError(stmt.Keyword, value)
 }
 
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {

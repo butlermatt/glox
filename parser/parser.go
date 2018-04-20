@@ -306,6 +306,8 @@ func (p *Parser) statement() Stmt {
 		return p.ifStatement()
 	case p.match(lexer.Print):
 		return p.printStatement()
+	case p.match(lexer.Return):
+		return p.returnStatement()
 	case p.match(lexer.While):
 		return p.whileStatement()
 	case p.match(lexer.For):
@@ -357,6 +359,20 @@ func (p *Parser) printStatement() Stmt {
 	value := p.expression()
 	p.consume(lexer.Semicolon, "Expect ';' after value.")
 	return &PrintStmt{Expression: value}
+}
+
+func (p *Parser) returnStatement() Stmt {
+	keyword := p.prevTok
+	var value Expr
+
+	if !p.check(lexer.Semicolon) {
+		value = p.expression()
+	}
+
+	if !p.consume(lexer.Semicolon, "Expect ';' after return value.") {
+		return nil
+	}
+	return &ReturnStmt{Keyword: keyword, Value: value}
 }
 
 func (p *Parser) whileStatement() Stmt {

@@ -122,6 +122,13 @@ type PrintStmt struct {
 
 func (p *PrintStmt) Accept(visitor StmtVisitor) error { return visitor.VisitPrintStmt(p) }
 
+type ReturnStmt struct {
+	Keyword *lexer.Token
+	Value   Expr
+}
+
+func (r *ReturnStmt) Accept(visitor StmtVisitor) error { return visitor.VisitReturnStmt(r) }
+
 type VarStmt struct {
 	Name        *lexer.Token
 	Initializer Expr
@@ -154,6 +161,7 @@ type StmtVisitor interface {
 	VisitFunctionStmt(stmt *FunctionStmt) error
 	VisitIfStmt(stmt *IfStmt) error
 	VisitPrintStmt(stmt *PrintStmt) error
+	VisitReturnStmt(stmt *ReturnStmt) error
 	VisitVarStmt(stmt *VarStmt) error
 	VisitForStmt(stmt *ForStmt) error
 	VisitBreakStmt(stmt *BreakStmt) error
