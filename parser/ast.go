@@ -100,6 +100,14 @@ type ExpressionStmt struct {
 
 func (e *ExpressionStmt) Accept(visitor StmtVisitor) error { return visitor.VisitExpressionStmt(e) }
 
+type FunctionStmt struct {
+	Name       *lexer.Token
+	Parameters []*lexer.Token
+	Body       []Stmt
+}
+
+func (f *FunctionStmt) Accept(visitor StmtVisitor) error { return visitor.VisitFunctionStmt(f) }
+
 type IfStmt struct {
 	Condition Expr
 	Then      Stmt
@@ -143,6 +151,7 @@ func (c *ContinueStmt) Accept(visitor StmtVisitor) error { return visitor.VisitC
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *BlockStmt) error
 	VisitExpressionStmt(stmt *ExpressionStmt) error
+	VisitFunctionStmt(stmt *FunctionStmt) error
 	VisitIfStmt(stmt *IfStmt) error
 	VisitPrintStmt(stmt *PrintStmt) error
 	VisitVarStmt(stmt *VarStmt) error

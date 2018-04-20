@@ -323,6 +323,12 @@ func (i *Interpreter) VisitContinueStmt(stmt *parser.ContinueStmt) error {
 	return ContinueError
 }
 
+func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) error {
+	fun := &Function{declaration: stmt}
+	i.environment.Define(stmt.Name, fun)
+	return nil
+}
+
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {
 	prev := i.environment
 	i.environment = env

@@ -1,5 +1,7 @@
 package interpreter
 
+import "github.com/butlermatt/glpc/parser"
+
 type CallFn func(interpreter *Interpreter, args []interface{}) (interface{}, error)
 
 type Callable interface {
@@ -16,4 +18,24 @@ type BuiltIn struct {
 func (b *BuiltIn) Arity() int { return b.arity }
 func (b *BuiltIn) Call(interp *Interpreter, args []interface{}) (interface{}, error) {
 	return b.callFn(interp, args)
+}
+
+type Function struct {
+	declaration *parser.FunctionStmt
+}
+
+func (f *Function) Arity() int     { return len(f.declaration.Parameters) }
+func (f *Function) String() string { return "<fn " + f.declaration.Name.Lexeme + ">" }
+func (f *Function) Call(interp *Interpreter, args []interface{}) (interface{}, error) {
+	if len(args) != f.Arity() {
+		return nil, newError(f.declaration.Name, "Incorrect number of arguments passed.")
+	}
+
+	env := NewEnclosedEnvironment(interp.globals)
+	for i, p := range f.declaration.Parameters {
+		env.Define(p, args[i])
+	}
+
+	interp.executeBlock(f.declaration.Body, env)
+	return nil, nil
 }

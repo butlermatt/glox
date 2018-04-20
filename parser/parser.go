@@ -427,7 +427,9 @@ func (p *Parser) block() []Stmt {
 
 func (p *Parser) declaration() Stmt {
 	var stmt Stmt
-	if p.match(lexer.Var) {
+	if p.match(lexer.Fun) {
+		stmt = p.function("function")
+	} else if p.match(lexer.Var) {
 		stmt = p.varDeclaration()
 	} else {
 		stmt = p.statement()
@@ -438,6 +440,43 @@ func (p *Parser) declaration() Stmt {
 		return nil
 	}
 	return stmt
+}
+
+func (p *Parser) function(kind string) Stmt {
+	if !p.consume(lexer.Ident, "Expect "+kind+" name.") {
+		return nil
+	}
+
+	name := p.prevTok
+	if !p.consume(lexer.LParen, "Expect '(' after "+kind+" name.") {
+		return nil
+	}
+
+	var params []*lexer.Token
+	if !p.check(lexer.RParen) {
+		if !p.consume(lexer.Ident, "Expect parameter name.") {
+			return nil
+		}
+		params = append(params, p.prevTok)
+		for p.match(lexer.Comma) {
+			if len(params) > 32 {
+				p.addError(p.curTok, "Cannot have more than 32 parameters.")
+			}
+			if !p.consume(lexer.Ident, "Expect parameter name.") {
+				return nil
+			}
+			params = append(params, p.prevTok)
+		}
+	}
+
+	if !p.consume(lexer.RParen, "Expect ')' after parameters") {
+		return nil
+	}
+	if !p.consume(lexer.LBrace, "Expect '{' before "+kind+" body.") {
+		return nil
+	}
+	body := p.block()
+	return &FunctionStmt{Name: name, Parameters: params, Body: body}
 }
 
 func (p *Parser) varDeclaration() Stmt {
