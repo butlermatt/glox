@@ -269,6 +269,10 @@ func (p *Parser) statement() Stmt {
 		return p.ifStatement()
 	case p.match(lexer.Print):
 		return p.printStatement()
+	case p.match(lexer.While):
+		return p.whileStatement()
+	case p.match(lexer.For):
+		return p.forStatement()
 	case p.match(lexer.LBrace):
 		return &BlockStmt{Statements: p.block()}
 	}
@@ -300,6 +304,68 @@ func (p *Parser) printStatement() Stmt {
 	value := p.expression()
 	p.consume(lexer.Semicolon, "Expect ';' after value.")
 	return &PrintStmt{Expression: value}
+}
+
+func (p *Parser) whileStatement() Stmt {
+	if !p.consume(lexer.LParen, "Expect '(' after 'while'") {
+		return nil
+	}
+
+	cond := p.expression()
+	if !p.consume(lexer.RParen, "Expect ')' after while condition") {
+		return nil
+	}
+	body := p.statement()
+
+	return &WhileStmt{Condition: cond, Body: body}
+}
+
+func (p *Parser) forStatement() Stmt {
+	if !p.consume(lexer.LParen, "Expect '(' after 'for'.") {
+		return nil
+	}
+
+	var initializer Stmt
+	if p.match(lexer.Semicolon) {
+		initializer = nil // Redundant but easy to read
+	} else if p.match(lexer.Var) {
+		initializer = p.varDeclaration()
+	} else {
+		initializer = p.expressionStatement()
+	}
+
+	var cond Expr
+	if !p.check(lexer.Semicolon) {
+		cond = p.expression()
+	}
+	if !p.consume(lexer.Semicolon, "Expect ';' after loop condition.") {
+		return nil
+	}
+
+	var increment Expr
+	if !p.check(lexer.RParen) {
+		increment = p.expression()
+	}
+	if !p.consume(lexer.RParen, "Expect ')' after for clauses.") {
+		return nil
+	}
+
+	body := p.statement()
+
+	if increment != nil {
+		body = &BlockStmt{Statements: []Stmt{body, &ExpressionStmt{Expression: increment}}}
+	}
+
+	if cond == nil {
+		cond = &LiteralExpr{Value: true}
+	}
+	body = &WhileStmt{Condition: cond, Body: body}
+
+	if initializer != nil {
+		body = &BlockStmt{Statements: []Stmt{initializer, body}}
+	}
+
+	return body
 }
 
 func (p *Parser) expressionStatement() Stmt {

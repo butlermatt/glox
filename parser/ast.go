@@ -112,10 +112,18 @@ type VarStmt struct {
 
 func (v *VarStmt) Accept(visitor StmtVisitor) error { return visitor.VisitVarStmt(v) }
 
+type WhileStmt struct {
+	Condition Expr
+	Body      Stmt
+}
+
+func (w *WhileStmt) Accept(visitor StmtVisitor) error { return visitor.VisitWhileStmt(w) }
+
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *BlockStmt) error
 	VisitExpressionStmt(stmt *ExpressionStmt) error
 	VisitIfStmt(stmt *IfStmt) error
 	VisitPrintStmt(stmt *PrintStmt) error
 	VisitVarStmt(stmt *VarStmt) error
+	VisitWhileStmt(stmt *WhileStmt) error
 }

@@ -30,6 +30,7 @@ func main() {
 		"If : Condition Expr, Then Stmt, Else Stmt",
 		"Print : Expression Expr",
 		"Var : Name *lexer.Token, Initializer Expr",
+		"While : Condition Expr, Body Stmt",
 	}
 
 	err := defineAst(outDir, expressions, statements)

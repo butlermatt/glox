@@ -238,6 +238,19 @@ func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) error {
 	return nil
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) error {
+	cond, err := i.evaluate(stmt.Condition)
+	for err == nil && isTruthy(cond) {
+		err = i.execute(stmt.Body)
+		if err != nil {
+			break
+		}
+		cond, err = i.evaluate(stmt.Condition)
+	}
+
+	return err
+}
+
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {
 	prev := i.environment
 	i.environment = env
