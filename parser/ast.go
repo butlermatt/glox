@@ -10,45 +10,62 @@ type Stmt interface {
 	Accept(StmtVisitor) error
 }
 
-
 type AssignExpr struct {
-	Name *lexer.Token
+	Name  *lexer.Token
 	Value Expr
 }
 
-func (a *AssignExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitAssignExpr(a) }
-
-type BinaryExpr struct {
-	Left Expr
-	Operator *lexer.Token
-	Right Expr
+func (a *AssignExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitAssignExpr(a)
 }
 
-func (b *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitBinaryExpr(b) }
+type BinaryExpr struct {
+	Left     Expr
+	Operator *lexer.Token
+	Right    Expr
+}
+
+func (b *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitBinaryExpr(b)
+}
+
+type CallExpr struct {
+	Callee Expr
+	Paren  *lexer.Token
+	Args   []Expr
+}
+
+func (c *CallExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitCallExpr(c) }
 
 type GroupingExpr struct {
 	Expression Expr
 }
 
-func (g *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitGroupingExpr(g) }
+func (g *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitGroupingExpr(g)
+}
 
 type LiteralExpr struct {
 	Value interface{}
 }
 
-func (l *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitLiteralExpr(l) }
-
-type LogicalExpr struct {
-	Left Expr
-	Operator *lexer.Token
-	Right Expr
+func (l *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitLiteralExpr(l)
 }
 
-func (l *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitLogicalExpr(l) }
+type LogicalExpr struct {
+	Left     Expr
+	Operator *lexer.Token
+	Right    Expr
+}
+
+func (l *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitLogicalExpr(l)
+}
 
 type UnaryExpr struct {
 	Operator *lexer.Token
-	Right Expr
+	Right    Expr
 }
 
 func (u *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitUnaryExpr(u) }
@@ -57,12 +74,14 @@ type VariableExpr struct {
 	Name *lexer.Token
 }
 
-func (v *VariableExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitVariableExpr(v) }
-
+func (v *VariableExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitVariableExpr(v)
+}
 
 type ExprVisitor interface {
 	VisitAssignExpr(expr *AssignExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
+	VisitCallExpr(expr *CallExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
@@ -83,8 +102,8 @@ func (e *ExpressionStmt) Accept(visitor StmtVisitor) error { return visitor.Visi
 
 type IfStmt struct {
 	Condition Expr
-	Then Stmt
-	Else Stmt
+	Then      Stmt
+	Else      Stmt
 }
 
 func (i *IfStmt) Accept(visitor StmtVisitor) error { return visitor.VisitIfStmt(i) }
@@ -96,7 +115,7 @@ type PrintStmt struct {
 func (p *PrintStmt) Accept(visitor StmtVisitor) error { return visitor.VisitPrintStmt(p) }
 
 type VarStmt struct {
-	Name *lexer.Token
+	Name        *lexer.Token
 	Initializer Expr
 }
 
@@ -104,25 +123,22 @@ func (v *VarStmt) Accept(visitor StmtVisitor) error { return visitor.VisitVarStm
 
 type ForStmt struct {
 	Initializer Stmt
-	Condition Expr
-	Body Stmt
-	Increment Expr
+	Condition   Expr
+	Body        Stmt
+	Increment   Expr
 }
 
 func (f *ForStmt) Accept(visitor StmtVisitor) error { return visitor.VisitForStmt(f) }
 
 type BreakStmt struct {
-	
 }
 
 func (b *BreakStmt) Accept(visitor StmtVisitor) error { return visitor.VisitBreakStmt(b) }
 
 type ContinueStmt struct {
-	
 }
 
 func (c *ContinueStmt) Accept(visitor StmtVisitor) error { return visitor.VisitContinueStmt(c) }
-
 
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *BlockStmt) error

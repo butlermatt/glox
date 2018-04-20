@@ -25,6 +25,10 @@ func (e *Environment) Define(name *lexer.Token, value interface{}) error {
 	return nil
 }
 
+func (e *Environment) builtin(name string, in *BuiltIn) {
+	e.m[name] = in
+}
+
 func (e *Environment) Get(name *lexer.Token) (interface{}, error) {
 	v, ok := e.m[name.Lexeme]
 	if ok {

@@ -210,7 +210,21 @@ func (p *Parser) unary() Expr {
 		return &UnaryExpr{Operator: oper, Right: right}
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() Expr {
+	expr := p.primary()
+
+	for {
+		if p.match(lexer.LParen) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+
+	return expr
 }
 
 func (p *Parser) primary() Expr {
@@ -237,6 +251,25 @@ func (p *Parser) primary() Expr {
 
 	p.addError(p.curTok, "Expect expression.")
 	return nil
+}
+
+func (p *Parser) finishCall(callee Expr) Expr {
+	var args []Expr
+
+	if !p.check(lexer.RParen) {
+		args = append(args, p.expression())
+		for p.match(lexer.Comma) {
+			if len(args) >= 32 {
+				p.addError(p.curTok, "Cannot have more than 32 arguments")
+			}
+			args = append(args, p.expression())
+		}
+	}
+
+	if !p.consume(lexer.RParen, "Expect ')' after arguments.") {
+		return nil
+	}
+	return &CallExpr{Callee: callee, Paren: p.prevTok, Args: args}
 }
 
 func (p *Parser) synchronize() {

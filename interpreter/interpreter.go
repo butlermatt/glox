@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/butlermatt/glpc/lexer"
 	"github.com/butlermatt/glpc/parser"
+	"time"
 )
 
 var BreakError = errors.New("Unexpected 'break' outside of loop")
@@ -21,11 +22,19 @@ func (re *RuntimeError) Error() string {
 
 type Interpreter struct {
 	stmts       []parser.Stmt
+	globals     *Environment
 	environment *Environment
 }
 
 func New(statements []parser.Stmt) *Interpreter {
-	return &Interpreter{stmts: statements, environment: NewEnvironment()}
+	env := NewEnvironment()
+	env.builtin("clock", &BuiltIn{
+		arity: 0,
+		callFn: func(interp *Interpreter, args []interface{}) (interface{}, error) {
+			return float64(time.Now().Unix()), nil
+		}},
+	)
+	return &Interpreter{stmts: statements, globals: env, environment: env}
 }
 
 func (i *Interpreter) Interpret() error {
@@ -188,6 +197,31 @@ func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) (interface{}, e
 	}
 
 	return i.evaluate(expr.Right)
+}
+
+func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) (interface{}, error) {
+	callee, err := i.evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+
+	var args []interface{}
+	for _, arg := range expr.Args {
+		a, err := i.evaluate(arg)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, a)
+	}
+
+	if function, ok := callee.(Callable); !ok {
+		return nil, newError(expr.Paren, "Can only call functions and classes.")
+	} else {
+		if len(args) != function.Arity() {
+			return nil, newError(expr.Paren, fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args)))
+		}
+		return function.Call(i, args)
+	}
 }
 
 func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
