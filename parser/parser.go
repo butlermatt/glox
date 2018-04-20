@@ -265,6 +265,10 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) statement() Stmt {
 	switch {
+	case p.match(lexer.Break):
+		return p.breakStatement()
+	case p.match(lexer.Continue):
+		return p.continueStatement()
 	case p.match(lexer.If):
 		return p.ifStatement()
 	case p.match(lexer.Print):
@@ -278,6 +282,22 @@ func (p *Parser) statement() Stmt {
 	}
 
 	return p.expressionStatement()
+}
+
+func (p *Parser) breakStatement() Stmt {
+	if !p.consume(lexer.Semicolon, "Expect ';' after 'break'.") {
+		return nil
+	}
+
+	return &BreakStmt{}
+}
+
+func (p *Parser) continueStatement() Stmt {
+	if !p.consume(lexer.Semicolon, "Expect ';' after 'continue'.") {
+		return nil
+	}
+
+	return &ContinueStmt{}
 }
 
 func (p *Parser) ifStatement() Stmt {
@@ -317,7 +337,7 @@ func (p *Parser) whileStatement() Stmt {
 	}
 	body := p.statement()
 
-	return &WhileStmt{Condition: cond, Body: body}
+	return &ForStmt{Condition: cond, Body: body}
 }
 
 func (p *Parser) forStatement() Stmt {
@@ -352,20 +372,7 @@ func (p *Parser) forStatement() Stmt {
 
 	body := p.statement()
 
-	if increment != nil {
-		body = &BlockStmt{Statements: []Stmt{body, &ExpressionStmt{Expression: increment}}}
-	}
-
-	if cond == nil {
-		cond = &LiteralExpr{Value: true}
-	}
-	body = &WhileStmt{Condition: cond, Body: body}
-
-	if initializer != nil {
-		body = &BlockStmt{Statements: []Stmt{initializer, body}}
-	}
-
-	return body
+	return &ForStmt{Initializer: initializer, Condition: cond, Body: body, Increment: increment}
 }
 
 func (p *Parser) expressionStatement() Stmt {

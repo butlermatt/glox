@@ -1,10 +1,14 @@
 package interpreter
 
 import (
+	"errors"
 	"fmt"
 	"github.com/butlermatt/glpc/lexer"
 	"github.com/butlermatt/glpc/parser"
 )
+
+var BreakError = errors.New("Unexpected 'break' outside of loop")
+var ContinueError = errors.New("Unexpected 'continue' outside of loop")
 
 type RuntimeError struct {
 	Token   *lexer.Token
@@ -238,17 +242,51 @@ func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) error {
 	return nil
 }
 
-func (i *Interpreter) VisitWhileStmt(stmt *parser.WhileStmt) error {
+func (i *Interpreter) VisitForStmt(stmt *parser.ForStmt) error {
+	prev := i.environment
+	i.environment = NewEnclosedEnvironment(i.environment)
+
+	if stmt.Initializer != nil {
+		err := i.execute(stmt.Initializer)
+		if err != nil {
+			i.environment = prev
+			return err
+		}
+	}
+
 	cond, err := i.evaluate(stmt.Condition)
 	for err == nil && isTruthy(cond) {
 		err = i.execute(stmt.Body)
-		if err != nil {
+		if err == BreakError {
+			err = nil
+			break
+		} else if err == ContinueError {
+			err = nil
+		} else if err != nil {
 			break
 		}
+
+		if stmt.Increment != nil {
+			_, err = i.evaluate(stmt.Increment)
+			if err != nil {
+				i.environment = prev
+				break
+			}
+		}
 		cond, err = i.evaluate(stmt.Condition)
+
 	}
 
+	i.environment = prev
 	return err
+}
+
+func (i *Interpreter) VisitBreakStmt(stmt *parser.BreakStmt) error {
+	return BreakError
+}
+
+func (i *Interpreter) VisitContinueStmt(stmt *parser.ContinueStmt) error {
+	return ContinueError
 }
 
 func (i *Interpreter) executeBlock(statements []parser.Stmt, env *Environment) error {

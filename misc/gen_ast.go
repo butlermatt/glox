@@ -30,7 +30,9 @@ func main() {
 		"If : Condition Expr, Then Stmt, Else Stmt",
 		"Print : Expression Expr",
 		"Var : Name *lexer.Token, Initializer Expr",
-		"While : Condition Expr, Body Stmt",
+		"For : Initializer Stmt, Condition Expr, Body Stmt, Increment Expr",
+		"Break : ",
+		"Continue : ",
 	}
 
 	err := defineAst(outDir, expressions, statements)
