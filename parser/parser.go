@@ -320,19 +320,21 @@ func (p *Parser) statement() Stmt {
 }
 
 func (p *Parser) breakStatement() Stmt {
+	keyword := p.prevTok
 	if !p.consume(lexer.Semicolon, "Expect ';' after 'break'.") {
 		return nil
 	}
 
-	return &BreakStmt{}
+	return &BreakStmt{Keyword: keyword}
 }
 
 func (p *Parser) continueStatement() Stmt {
+	keyword := p.prevTok
 	if !p.consume(lexer.Semicolon, "Expect ';' after 'continue'.") {
 		return nil
 	}
 
-	return &ContinueStmt{}
+	return &ContinueStmt{Keyword: keyword}
 }
 
 func (p *Parser) ifStatement() Stmt {

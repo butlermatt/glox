@@ -34,8 +34,8 @@ func main() {
 		"Return : Keyword *lexer.Token, Value Expr",
 		"Var : Name *lexer.Token, Initializer Expr",
 		"For : Initializer Stmt, Condition Expr, Body Stmt, Increment Expr",
-		"Break : ",
-		"Continue : ",
+		"Break : Keyword *lexer.Token",
+		"Continue : Keyword *lexer.Token",
 	}
 
 	err := defineAst(outDir, expressions, statements)

@@ -63,7 +63,12 @@ func run(input string) error {
 	}
 
 	interp := interpreter.New(stmts)
-	err := interp.Interpret()
+	resolver := interpreter.NewResolver(interp)
+	err := resolver.Resolve(stmts)
+	if err != nil {
+		return err
+	}
+	err = interp.Interpret()
 	if err != nil {
 		return err
 	}

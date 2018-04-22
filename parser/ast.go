@@ -146,11 +146,13 @@ type ForStmt struct {
 func (f *ForStmt) Accept(visitor StmtVisitor) error { return visitor.VisitForStmt(f) }
 
 type BreakStmt struct {
+	Keyword *lexer.Token
 }
 
 func (b *BreakStmt) Accept(visitor StmtVisitor) error { return visitor.VisitBreakStmt(b) }
 
 type ContinueStmt struct {
+	Keyword *lexer.Token
 }
 
 func (c *ContinueStmt) Accept(visitor StmtVisitor) error { return visitor.VisitContinueStmt(c) }

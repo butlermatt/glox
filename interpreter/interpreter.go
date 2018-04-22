@@ -33,6 +33,7 @@ type Interpreter struct {
 	stmts       []parser.Stmt
 	globals     *Environment
 	environment *Environment
+	locals      map[parser.Expr]int
 }
 
 func New(statements []parser.Stmt) *Interpreter {
@@ -43,7 +44,7 @@ func New(statements []parser.Stmt) *Interpreter {
 			return float64(time.Now().Unix()), nil
 		}},
 	)
-	return &Interpreter{stmts: statements, globals: env, environment: env}
+	return &Interpreter{stmts: statements, globals: env, environment: env, locals: make(map[parser.Expr]int)}
 }
 
 func (i *Interpreter) Interpret() error {
@@ -59,6 +60,10 @@ func (i *Interpreter) Interpret() error {
 
 func (i *Interpreter) execute(stmt parser.Stmt) error {
 	return stmt.Accept(i)
+}
+
+func (i *Interpreter) resolve(expr parser.Expr, depth int) {
+	i.locals[expr] = depth
 }
 
 func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, error) {
@@ -173,7 +178,14 @@ func (i *Interpreter) VisitUnaryExpr(unary *parser.UnaryExpr) (interface{}, erro
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *parser.VariableExpr) (interface{}, error) {
-	return i.environment.Get(expr.Name)
+	return i.lookUpVariable(expr.Name, expr)
+}
+
+func (i *Interpreter) lookUpVariable(name *lexer.Token, expr parser.Expr) (interface{}, error) {
+	if distance, ok := i.locals[expr]; ok {
+		return i.environment.GetAt(distance, name)
+	}
+	return i.globals.Get(name)
 }
 
 func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) (interface{}, error) {
@@ -181,11 +193,12 @@ func (i *Interpreter) VisitAssignExpr(expr *parser.AssignExpr) (interface{}, err
 	if err != nil {
 		return nil, err
 	}
-
-	err = i.environment.Assign(expr.Name, value)
-	if err != nil {
-		return nil, err
+	if distance, ok := i.locals[expr]; ok {
+		i.environment.AssignAt(distance, expr.Name, value)
+	} else {
+		i.globals.Assign(expr.Name, value)
 	}
+
 	return value, nil
 }
 
