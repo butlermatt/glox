@@ -221,6 +221,26 @@ func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) (interface{}, e
 	return i.evaluate(expr.Right)
 }
 
+func (i *Interpreter) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
+	obj, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	o, ok := obj.(*LoxInstance)
+	if !ok {
+		return nil, newError(expr.Name, "Only instances have fields.")
+	}
+
+	val, err := i.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	o.Set(expr.Name, val)
+
+	return val, nil
+}
+
 func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) (interface{}, error) {
 	callee, err := i.evaluate(expr.Callee)
 	if err != nil {

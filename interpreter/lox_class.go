@@ -34,3 +34,7 @@ func (li *LoxInstance) Get(name *lexer.Token) (interface{}, error) {
 
 	return nil, newError(name, "Undefined property '"+name.Lexeme+"'.")
 }
+
+func (li *LoxInstance) Set(name *lexer.Token, value interface{}) {
+	li.fields[name.Lexeme] = value
+}

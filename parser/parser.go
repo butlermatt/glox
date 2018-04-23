@@ -93,8 +93,11 @@ func (p *Parser) assignment() Expr {
 		equals := p.prevTok
 		value := p.assignment()
 
-		if e, ok := expr.(*VariableExpr); ok {
+		switch e := expr.(type) {
+		case *VariableExpr:
 			return &AssignExpr{Name: e.Name, Value: value}
+		case *GetExpr:
+			return &SetExpr{Object: e.Object, Name: e.Name, Value: value}
 		}
 
 		p.addError(equals, "Invalid assignment target.")

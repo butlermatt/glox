@@ -207,6 +207,15 @@ func (r *Resolver) VisitLogicalExpr(expr *parser.LogicalExpr) (interface{}, erro
 	return nil, err
 }
 
+func (r *Resolver) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
+	err := r.resolveExpr(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	err = r.resolveExpr(expr.Object)
+	return nil, err
+}
+
 func (r *Resolver) VisitUnaryExpr(expr *parser.UnaryExpr) (interface{}, error) {
 	return nil, r.resolveExpr(expr.Right)
 }

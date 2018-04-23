@@ -22,6 +22,7 @@ func main() {
 		"Grouping : Expression Expr",
 		"Literal : Value interface{}",
 		"Logical : Left Expr, Operator *lexer.Token, Right Expr",
+		"Set : Object Expr, Name *lexer.Token, Value Expr",
 		"Unary : Operator *lexer.Token, Right Expr",
 		"Variable : Name *lexer.Token",
 	}
