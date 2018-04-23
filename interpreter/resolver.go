@@ -50,6 +50,12 @@ func (r *Resolver) VisitBlockStmt(stmt *parser.BlockStmt) error {
 	return err
 }
 
+func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
+	r.declare(stmt.Name)
+	r.define(stmt.Name)
+	return nil
+}
+
 func (r *Resolver) VisitExpressionStmt(stmt *parser.ExpressionStmt) error {
 	r.resolveExpr(stmt.Expression)
 	return nil

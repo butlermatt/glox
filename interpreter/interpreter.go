@@ -251,8 +251,8 @@ func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) error {
-	i.evaluate(stmt.Expression)
-	return nil
+	_, err := i.evaluate(stmt.Expression)
+	return err
 }
 
 func (i *Interpreter) VisitPrintStmt(stmt *parser.PrintStmt) error {
@@ -280,6 +280,13 @@ func (i *Interpreter) VisitVarStmt(stmt *parser.VarStmt) error {
 
 func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) error {
 	return i.executeBlock(stmt.Statements, NewEnclosedEnvironment(i.environment))
+}
+
+func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
+	i.environment.Define(stmt.Name, nil)
+	klass := &LoxClass{Name: stmt.Name.Lexeme}
+	i.environment.Assign(stmt.Name, klass)
+	return nil
 }
 
 func (i *Interpreter) VisitIfStmt(stmt *parser.IfStmt) error {

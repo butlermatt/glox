@@ -445,11 +445,15 @@ func (p *Parser) block() []Stmt {
 
 func (p *Parser) declaration() Stmt {
 	var stmt Stmt
-	if p.match(lexer.Fun) {
+
+	switch {
+	case p.match(lexer.Class):
+		stmt = p.classDeclaration()
+	case p.match(lexer.Fun):
 		stmt = p.function("function")
-	} else if p.match(lexer.Var) {
+	case p.match(lexer.Var):
 		stmt = p.varDeclaration()
-	} else {
+	default:
 		stmt = p.statement()
 	}
 
@@ -458,6 +462,32 @@ func (p *Parser) declaration() Stmt {
 		return nil
 	}
 	return stmt
+}
+
+func (p *Parser) classDeclaration() Stmt {
+
+	if !p.consume(lexer.Ident, "Expect class name.") {
+		return nil
+	}
+	name := p.prevTok
+	if !p.consume(lexer.LBrace, "Expect '{' before class body.") {
+		return nil
+	}
+
+	var methods []*FunctionStmt
+	for !p.check(lexer.RBrace) && p.curTok.Type != lexer.EOF {
+		f := p.function("method")
+		if f == nil {
+			return nil
+		}
+
+		methods = append(methods, f.(*FunctionStmt))
+	}
+
+	if !p.consume(lexer.RBrace, "Expect '}' after class body.") {
+		return nil
+	}
+	return &ClassStmt{Name: name, Methods: methods}
 }
 
 func (p *Parser) function(kind string) Stmt {

@@ -94,6 +94,13 @@ type BlockStmt struct {
 
 func (b *BlockStmt) Accept(visitor StmtVisitor) error { return visitor.VisitBlockStmt(b) }
 
+type ClassStmt struct {
+	Name    *lexer.Token
+	Methods []*FunctionStmt
+}
+
+func (c *ClassStmt) Accept(visitor StmtVisitor) error { return visitor.VisitClassStmt(c) }
+
 type ExpressionStmt struct {
 	Expression Expr
 }
@@ -159,6 +166,7 @@ func (c *ContinueStmt) Accept(visitor StmtVisitor) error { return visitor.VisitC
 
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *BlockStmt) error
+	VisitClassStmt(stmt *ClassStmt) error
 	VisitExpressionStmt(stmt *ExpressionStmt) error
 	VisitFunctionStmt(stmt *FunctionStmt) error
 	VisitIfStmt(stmt *IfStmt) error
