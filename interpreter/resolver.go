@@ -9,8 +9,8 @@ type FunctionType int
 
 const (
 	None FunctionType = iota
-	Loop
 	Func
+	Method
 )
 
 func NewResolver(interpreter *Interpreter) *Resolver {
@@ -53,6 +53,12 @@ func (r *Resolver) VisitBlockStmt(stmt *parser.BlockStmt) error {
 func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
+
+	for _, method := range stmt.Methods {
+		declaration := Method
+		r.resolveFunction(method, declaration)
+	}
+
 	return nil
 }
 

@@ -315,7 +315,13 @@ func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) error {
 
 func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
 	i.environment.Define(stmt.Name, nil)
-	klass := &LoxClass{Name: stmt.Name.Lexeme}
+
+	var methods = make(map[string]*Function)
+	for _, method := range stmt.Methods {
+		methods[method.Name.Lexeme] = NewFunction(method, i.environment)
+	}
+
+	klass := NewClass(stmt.Name.Lexeme, methods)
 	i.environment.Assign(stmt.Name, klass)
 	return nil
 }
