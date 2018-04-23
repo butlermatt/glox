@@ -182,6 +182,14 @@ func (r *Resolver) VisitCallExpr(expr *parser.CallExpr) (interface{}, error) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitGetExpr(expr *parser.GetExpr) (interface{}, error) {
+	err := r.resolveExpr(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (r *Resolver) VisitGroupingExpr(expr *parser.GroupingExpr) (interface{}, error) {
 	return nil, r.resolveExpr(expr.Expression)
 }

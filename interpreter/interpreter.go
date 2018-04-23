@@ -246,6 +246,17 @@ func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) (interface{}, error) 
 	}
 }
 
+func (i *Interpreter) VisitGetExpr(expr *parser.GetExpr) (interface{}, error) {
+	obj, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	if li, ok := obj.(*LoxInstance); ok {
+		return li.Get(expr.Name)
+	}
+	return nil, newError(expr.Name, "Only instances have properties.")
+}
+
 func (i *Interpreter) evaluate(expr parser.Expr) (interface{}, error) {
 	return expr.Accept(i)
 }

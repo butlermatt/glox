@@ -37,6 +37,13 @@ type CallExpr struct {
 
 func (c *CallExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitCallExpr(c) }
 
+type GetExpr struct {
+	Object Expr
+	Name   *lexer.Token
+}
+
+func (g *GetExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitGetExpr(g) }
+
 type GroupingExpr struct {
 	Expression Expr
 }
@@ -82,6 +89,7 @@ type ExprVisitor interface {
 	VisitAssignExpr(expr *AssignExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
 	VisitCallExpr(expr *CallExpr) (interface{}, error)
+	VisitGetExpr(expr *GetExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)

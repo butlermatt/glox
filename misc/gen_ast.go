@@ -18,6 +18,7 @@ func main() {
 		"Assign : Name *lexer.Token, Value Expr",
 		"Binary : Left Expr, Operator *lexer.Token, Right Expr",
 		"Call : Callee Expr, Paren *lexer.Token, Args []Expr",
+		"Get : Object Expr, Name *lexer.Token",
 		"Grouping : Expression Expr",
 		"Literal : Value interface{}",
 		"Logical : Left Expr, Operator *lexer.Token, Right Expr",

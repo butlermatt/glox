@@ -219,6 +219,12 @@ func (p *Parser) call() Expr {
 	for {
 		if p.match(lexer.LParen) {
 			expr = p.finishCall(expr)
+		} else if p.match(lexer.Dot) {
+			if !p.consume(lexer.Ident, "Expect property name after '.'.") {
+				return nil
+			}
+			name := p.prevTok
+			expr = &GetExpr{Object: expr, Name: name}
 		} else {
 			break
 		}
