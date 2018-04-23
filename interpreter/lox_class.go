@@ -16,11 +16,23 @@ func (lc *LoxClass) String() string {
 }
 
 func (lc *LoxClass) Call(interpreter *Interpreter, args []interface{}) (interface{}, error) {
-	return &LoxInstance{klass: lc, fields: make(map[string]interface{})}, nil
+	instance := &LoxInstance{klass: lc, fields: make(map[string]interface{})}
+	initializer := lc.methods["init"]
+	if initializer != nil {
+		_, err := initializer.Bind(instance).Call(interpreter, args)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return instance, nil
 }
 
 func (lc *LoxClass) Arity() int {
-	return 0
+	init := lc.methods["init"]
+	if init == nil {
+		return 0
+	}
+	return init.Arity()
 }
 
 func (lc *LoxClass) findMethod(instance *LoxInstance, name string) *Function {

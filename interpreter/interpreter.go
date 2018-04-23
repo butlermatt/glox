@@ -322,7 +322,7 @@ func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
 
 	var methods = make(map[string]*Function)
 	for _, method := range stmt.Methods {
-		methods[method.Name.Lexeme] = NewFunction(method, i.environment)
+		methods[method.Name.Lexeme] = NewFunction(method, i.environment, method.Name.Lexeme == "init")
 	}
 
 	klass := NewClass(stmt.Name.Lexeme, methods)
@@ -394,7 +394,7 @@ func (i *Interpreter) VisitContinueStmt(stmt *parser.ContinueStmt) error {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *parser.FunctionStmt) error {
-	fun := NewFunction(stmt, i.environment)
+	fun := NewFunction(stmt, i.environment, false)
 	i.environment.Define(stmt.Name, fun)
 	return nil
 }

@@ -21,8 +21,9 @@ func (b *BuiltIn) Call(interp *Interpreter, args []interface{}) (interface{}, er
 }
 
 type Function struct {
-	declaration *parser.FunctionStmt
-	closure     *Environment
+	declaration   *parser.FunctionStmt
+	closure       *Environment
+	isInitializer bool
 }
 
 func (f *Function) Arity() int     { return len(f.declaration.Parameters) }
@@ -44,15 +45,20 @@ func (f *Function) Call(interp *Interpreter, args []interface{}) (interface{}, e
 		}
 		return nil, err
 	}
+
+	if f.isInitializer {
+		return f.closure.m["this"], nil
+	}
+
 	return nil, nil
 }
 
 func (f *Function) Bind(instance *LoxInstance) *Function {
 	env := NewEnclosedEnvironment(f.closure)
 	env.m["this"] = instance
-	return NewFunction(f.declaration, env)
+	return NewFunction(f.declaration, env, f.isInitializer)
 }
 
-func NewFunction(declaration *parser.FunctionStmt, environment *Environment) *Function {
-	return &Function{declaration: declaration, closure: environment}
+func NewFunction(declaration *parser.FunctionStmt, environment *Environment, isInit bool) *Function {
+	return &Function{declaration: declaration, closure: environment, isInitializer: isInit}
 }

@@ -10,6 +10,7 @@ type FunctionType int
 const (
 	None FunctionType = iota
 	Func
+	Initializer
 	Method
 )
 
@@ -58,13 +59,20 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	scope := r.peekScope()
 	scope["this"] = true
 
+	var err error
 	for _, method := range stmt.Methods {
 		declaration := Method
-		r.resolveFunction(method, declaration)
+		if method.Name.Lexeme == "init" {
+			declaration = Initializer
+		}
+		err = r.resolveFunction(method, declaration)
+		if err != nil {
+			break
+		}
 	}
 
 	r.endScope()
-	return nil
+	return err
 }
 
 func (r *Resolver) VisitExpressionStmt(stmt *parser.ExpressionStmt) error {
@@ -104,6 +112,9 @@ func (r *Resolver) VisitReturnStmt(stmt *parser.ReturnStmt) error {
 	}
 
 	if stmt.Value != nil {
+		if r.curFunc == Initializer {
+			return newError(stmt.Keyword, "Cannot return a value from an initializer.")
+		}
 		return r.resolveExpr(stmt.Value)
 	}
 	return nil
