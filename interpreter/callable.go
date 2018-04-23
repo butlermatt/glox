@@ -47,6 +47,12 @@ func (f *Function) Call(interp *Interpreter, args []interface{}) (interface{}, e
 	return nil, nil
 }
 
+func (f *Function) Bind(instance *LoxInstance) *Function {
+	env := NewEnclosedEnvironment(f.closure)
+	env.m["this"] = instance
+	return NewFunction(f.declaration, env)
+}
+
 func NewFunction(declaration *parser.FunctionStmt, environment *Environment) *Function {
 	return &Function{declaration: declaration, closure: environment}
 }

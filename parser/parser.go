@@ -240,14 +240,16 @@ func (p *Parser) primary() Expr {
 	switch {
 	case p.match(lexer.False):
 		return &LiteralExpr{Value: false}
-	case p.match(lexer.True):
-		return &LiteralExpr{Value: true}
+	case p.match(lexer.Ident):
+		return &VariableExpr{Name: p.prevTok}
 	case p.match(lexer.Null):
 		return &LiteralExpr{Value: nil}
 	case p.match(lexer.Number, lexer.String):
 		return &LiteralExpr{Value: p.prevTok.Literal}
-	case p.match(lexer.Ident):
-		return &VariableExpr{Name: p.prevTok}
+	case p.match(lexer.This):
+		return &ThisExpr{Keyword: p.prevTok}
+	case p.match(lexer.True):
+		return &LiteralExpr{Value: true}
 	case p.match(lexer.LParen):
 		exp := p.expression()
 		if exp == nil {

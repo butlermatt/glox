@@ -54,11 +54,16 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
+	r.beginScope()
+	scope := r.peekScope()
+	scope["this"] = true
+
 	for _, method := range stmt.Methods {
 		declaration := Method
 		r.resolveFunction(method, declaration)
 	}
 
+	r.endScope()
 	return nil
 }
 
@@ -220,6 +225,11 @@ func (r *Resolver) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 	}
 	err = r.resolveExpr(expr.Object)
 	return nil, err
+}
+
+func (r *Resolver) VisitThisExpr(expr *parser.ThisExpr) (interface{}, error) {
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
 }
 
 func (r *Resolver) VisitUnaryExpr(expr *parser.UnaryExpr) (interface{}, error) {

@@ -24,7 +24,11 @@ func (lc *LoxClass) Arity() int {
 }
 
 func (lc *LoxClass) findMethod(instance *LoxInstance, name string) *Function {
-	return lc.methods[name]
+	method := lc.methods[name]
+	if method != nil {
+		return method.Bind(instance)
+	}
+	return nil
 }
 
 type LoxInstance struct {

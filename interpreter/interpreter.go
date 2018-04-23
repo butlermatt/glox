@@ -241,6 +241,10 @@ func (i *Interpreter) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 	return val, nil
 }
 
+func (i *Interpreter) VisitThisExpr(expr *parser.ThisExpr) (interface{}, error) {
+	return i.lookUpVariable(expr.Keyword, expr)
+}
+
 func (i *Interpreter) VisitCallExpr(expr *parser.CallExpr) (interface{}, error) {
 	callee, err := i.evaluate(expr.Callee)
 	if err != nil {

@@ -78,6 +78,12 @@ type SetExpr struct {
 
 func (s *SetExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitSetExpr(s) }
 
+type ThisExpr struct {
+	Keyword *lexer.Token
+}
+
+func (t *ThisExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitThisExpr(t) }
+
 type UnaryExpr struct {
 	Operator *lexer.Token
 	Right    Expr
@@ -102,6 +108,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
 	VisitSetExpr(expr *SetExpr) (interface{}, error)
+	VisitThisExpr(expr *ThisExpr) (interface{}, error)
 	VisitUnaryExpr(expr *UnaryExpr) (interface{}, error)
 	VisitVariableExpr(expr *VariableExpr) (interface{}, error)
 }
