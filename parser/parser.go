@@ -246,6 +246,16 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: nil}
 	case p.match(lexer.Number, lexer.String):
 		return &LiteralExpr{Value: p.prevTok.Literal}
+	case p.match(lexer.Super):
+		keyword := p.prevTok
+		if !p.consume(lexer.Dot, "Expect '.' after 'super'") {
+			return nil
+		}
+		if !p.consume(lexer.Ident, "Expect superclass method name.") {
+			return nil
+		}
+		method := p.prevTok
+		return &SuperExpr{Keyword: keyword, Method: method}
 	case p.match(lexer.This):
 		return &ThisExpr{Keyword: p.prevTok}
 	case p.match(lexer.True):

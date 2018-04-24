@@ -68,6 +68,9 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 		if err != nil {
 			return err
 		}
+		r.beginScope()
+		sc := r.peekScope()
+		sc["super"] = true
 	}
 
 	r.beginScope()
@@ -87,6 +90,11 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	}
 
 	r.endScope()
+
+	if stmt.Superclass != nil {
+		r.endScope()
+	}
+
 	r.curClass = enclosingClass
 	return err
 }
@@ -252,6 +260,11 @@ func (r *Resolver) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 	}
 	err = r.resolveExpr(expr.Object)
 	return nil, err
+}
+
+func (r *Resolver) VisitSuperExpr(expr *parser.SuperExpr) (interface{}, error) {
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
 }
 
 func (r *Resolver) VisitThisExpr(expr *parser.ThisExpr) (interface{}, error) {

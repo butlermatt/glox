@@ -241,6 +241,36 @@ func (i *Interpreter) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 	return val, nil
 }
 
+func (i *Interpreter) VisitSuperExpr(expr *parser.SuperExpr) (interface{}, error) {
+	var superclass *LoxClass
+	var object *LoxInstance
+	dist := i.locals[expr]
+	sc, err := i.environment.GetAt(dist, expr.Keyword)
+	if err != nil {
+		return nil, err
+	}
+
+	var ok bool
+	if superclass, ok = sc.(*LoxClass); !ok {
+		return nil, newError(expr.Keyword, "Superclass was not a LoxClass")
+	}
+
+	obj, err := i.environment.GetAt(dist-1, &lexer.Token{Type: lexer.This, Lexeme: "this"})
+	if err != nil {
+		return nil, err
+	}
+	if object, ok = obj.(*LoxInstance); !ok {
+		return nil, newError(expr.Keyword, "this was not a LoxInstance")
+	}
+
+	method := superclass.findMethod(object, expr.Method.Lexeme)
+	if method == nil {
+		return nil, newError(expr.Method, "Undefined property '"+expr.Method.Lexeme+"'.")
+	}
+	return method, nil
+
+}
+
 func (i *Interpreter) VisitThisExpr(expr *parser.ThisExpr) (interface{}, error) {
 	return i.lookUpVariable(expr.Keyword, expr)
 }
@@ -330,6 +360,9 @@ func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
 		if sk, ok = sc.(*LoxClass); !ok {
 			return newError(stmt.Superclass.Name, "Superclass must be a class")
 		}
+
+		i.environment = NewEnclosedEnvironment(i.environment)
+		i.environment.m["super"] = sk
 	}
 
 	var methods = make(map[string]*Function)
@@ -338,6 +371,10 @@ func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
 	}
 
 	klass := NewClass(stmt.Name.Lexeme, sk, methods)
+	if sk != nil {
+		i.environment = i.environment.enclosing
+	}
+
 	i.environment.Assign(stmt.Name, klass)
 	return nil
 }

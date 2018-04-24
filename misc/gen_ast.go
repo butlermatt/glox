@@ -23,6 +23,7 @@ func main() {
 		"Literal : Value interface{}",
 		"Logical : Left Expr, Operator *lexer.Token, Right Expr",
 		"Set : Object Expr, Name *lexer.Token, Value Expr",
+		"Super : Keyword *lexer.Token, Method *lexer.Token",
 		"This : Keyword *lexer.Token",
 		"Unary : Operator *lexer.Token, Right Expr",
 		"Variable : Name *lexer.Token",
