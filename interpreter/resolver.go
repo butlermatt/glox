@@ -6,22 +6,27 @@ import (
 )
 
 type FunctionType int
+type ClassType int
 
 const (
-	None FunctionType = iota
-	Func
-	Initializer
-	Method
+	NoneFT FunctionType = iota
+	FuncFT
+	InitializerFT
+	MethodFT
+
+	NoneCT ClassType = iota
+	ClassCT
 )
 
 func NewResolver(interpreter *Interpreter) *Resolver {
-	return &Resolver{interpreter: interpreter, curFunc: None}
+	return &Resolver{interpreter: interpreter, curFunc: NoneFT}
 }
 
 type Resolver struct {
 	interpreter *Interpreter
 	stack       []map[string]bool
 	curFunc     FunctionType
+	curClass    ClassType
 	inLoop      bool
 }
 
@@ -55,15 +60,25 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
+	enclosingClass := r.curClass
+	r.curClass = ClassCT
+
+	if stmt.Superclass != nil {
+		err := r.resolveExpr(stmt.Superclass)
+		if err != nil {
+			return err
+		}
+	}
+
 	r.beginScope()
 	scope := r.peekScope()
 	scope["this"] = true
 
 	var err error
 	for _, method := range stmt.Methods {
-		declaration := Method
+		declaration := MethodFT
 		if method.Name.Lexeme == "init" {
-			declaration = Initializer
+			declaration = InitializerFT
 		}
 		err = r.resolveFunction(method, declaration)
 		if err != nil {
@@ -72,6 +87,7 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	}
 
 	r.endScope()
+	r.curClass = enclosingClass
 	return err
 }
 
@@ -99,7 +115,7 @@ func (r *Resolver) VisitFunctionStmt(stmt *parser.FunctionStmt) error {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
-	return r.resolveFunction(stmt, Func)
+	return r.resolveFunction(stmt, FuncFT)
 }
 
 func (r *Resolver) VisitPrintStmt(stmt *parser.PrintStmt) error {
@@ -107,12 +123,12 @@ func (r *Resolver) VisitPrintStmt(stmt *parser.PrintStmt) error {
 }
 
 func (r *Resolver) VisitReturnStmt(stmt *parser.ReturnStmt) error {
-	if r.curFunc == None {
+	if r.curFunc == NoneFT {
 		return newError(stmt.Keyword, "Cannot return from top-level code.")
 	}
 
 	if stmt.Value != nil {
-		if r.curFunc == Initializer {
+		if r.curFunc == InitializerFT {
 			return newError(stmt.Keyword, "Cannot return a value from an initializer.")
 		}
 		return r.resolveExpr(stmt.Value)
@@ -239,6 +255,9 @@ func (r *Resolver) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 }
 
 func (r *Resolver) VisitThisExpr(expr *parser.ThisExpr) (interface{}, error) {
+	if r.curClass == NoneCT {
+		return nil, newError(expr.Keyword, "Cannot use 'this' outside of a class.")
+	}
 	r.resolveLocal(expr, expr.Keyword)
 	return nil, nil
 }

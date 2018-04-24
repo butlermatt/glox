@@ -2,13 +2,14 @@ package interpreter
 
 import "github.com/butlermatt/glpc/lexer"
 
-func NewClass(name string, methods map[string]*Function) *LoxClass {
-	return &LoxClass{Name: name, methods: methods}
+func NewClass(name string, superclass *LoxClass, methods map[string]*Function) *LoxClass {
+	return &LoxClass{Name: name, superclass: superclass, methods: methods}
 }
 
 type LoxClass struct {
-	Name    string
-	methods map[string]*Function
+	Name       string
+	superclass *LoxClass
+	methods    map[string]*Function
 }
 
 func (lc *LoxClass) String() string {
@@ -40,6 +41,11 @@ func (lc *LoxClass) findMethod(instance *LoxInstance, name string) *Function {
 	if method != nil {
 		return method.Bind(instance)
 	}
+
+	if lc.superclass != nil {
+		return lc.superclass.findMethod(instance, name)
+	}
+
 	return nil
 }
 

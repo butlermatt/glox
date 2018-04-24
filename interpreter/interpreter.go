@@ -320,12 +320,24 @@ func (i *Interpreter) VisitBlockStmt(stmt *parser.BlockStmt) error {
 func (i *Interpreter) VisitClassStmt(stmt *parser.ClassStmt) error {
 	i.environment.Define(stmt.Name, nil)
 
+	var sk *LoxClass
+	if stmt.Superclass != nil {
+		sc, err := i.evaluate(stmt.Superclass)
+		if err != nil {
+			return err
+		}
+		var ok bool
+		if sk, ok = sc.(*LoxClass); !ok {
+			return newError(stmt.Superclass.Name, "Superclass must be a class")
+		}
+	}
+
 	var methods = make(map[string]*Function)
 	for _, method := range stmt.Methods {
 		methods[method.Name.Lexeme] = NewFunction(method, i.environment, method.Name.Lexeme == "init")
 	}
 
-	klass := NewClass(stmt.Name.Lexeme, methods)
+	klass := NewClass(stmt.Name.Lexeme, sk, methods)
 	i.environment.Assign(stmt.Name, klass)
 	return nil
 }

@@ -30,7 +30,7 @@ func main() {
 
 	statements := []string{
 		"Block : Statements []Stmt",
-		"Class : Name *lexer.Token, Methods []*FunctionStmt",
+		"Class : Name *lexer.Token, Superclass *VariableExpr, Methods []*FunctionStmt",
 		"Expression : Expression Expr",
 		"Function : Name *lexer.Token, Parameters []*lexer.Token, Body []Stmt",
 		"If : Condition Expr, Then Stmt, Else Stmt",

@@ -119,8 +119,9 @@ type BlockStmt struct {
 func (b *BlockStmt) Accept(visitor StmtVisitor) error { return visitor.VisitBlockStmt(b) }
 
 type ClassStmt struct {
-	Name    *lexer.Token
-	Methods []*FunctionStmt
+	Name       *lexer.Token
+	Superclass *VariableExpr
+	Methods    []*FunctionStmt
 }
 
 func (c *ClassStmt) Accept(visitor StmtVisitor) error { return visitor.VisitClassStmt(c) }

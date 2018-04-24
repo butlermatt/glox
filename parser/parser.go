@@ -481,6 +481,15 @@ func (p *Parser) classDeclaration() Stmt {
 		return nil
 	}
 	name := p.prevTok
+
+	var superclass *VariableExpr
+	if p.match(lexer.Less) {
+		if !p.consume(lexer.Ident, "Expect superclass name.") {
+			return nil
+		}
+		superclass = &VariableExpr{Name: p.prevTok}
+	}
+
 	if !p.consume(lexer.LBrace, "Expect '{' before class body.") {
 		return nil
 	}
@@ -498,7 +507,7 @@ func (p *Parser) classDeclaration() Stmt {
 	if !p.consume(lexer.RBrace, "Expect '}' after class body.") {
 		return nil
 	}
-	return &ClassStmt{Name: name, Methods: methods}
+	return &ClassStmt{Name: name, Superclass: superclass, Methods: methods}
 }
 
 func (p *Parser) function(kind string) Stmt {
