@@ -13,9 +13,12 @@ const (
 	FuncFT
 	InitializerFT
 	MethodFT
+)
 
+const (
 	NoneCT ClassType = iota
 	ClassCT
+	SubsclassCT
 )
 
 func NewResolver(interpreter *Interpreter) *Resolver {
@@ -64,6 +67,7 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 	r.curClass = ClassCT
 
 	if stmt.Superclass != nil {
+		r.curClass = SubsclassCT
 		err := r.resolveExpr(stmt.Superclass)
 		if err != nil {
 			return err
@@ -100,8 +104,7 @@ func (r *Resolver) VisitClassStmt(stmt *parser.ClassStmt) error {
 }
 
 func (r *Resolver) VisitExpressionStmt(stmt *parser.ExpressionStmt) error {
-	r.resolveExpr(stmt.Expression)
-	return nil
+	return r.resolveExpr(stmt.Expression)
 }
 
 func (r *Resolver) VisitIfStmt(stmt *parser.IfStmt) error {
@@ -263,6 +266,11 @@ func (r *Resolver) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
 }
 
 func (r *Resolver) VisitSuperExpr(expr *parser.SuperExpr) (interface{}, error) {
+	if r.curClass == NoneCT {
+		return nil, newError(expr.Keyword, "Cannot use 'super' outside of a class.")
+	} else if r.curClass != SubsclassCT {
+		return nil, newError(expr.Keyword, "Cannot use 'super' in a class with no superclass.")
+	}
 	r.resolveLocal(expr, expr.Keyword)
 	return nil, nil
 }
