@@ -58,6 +58,14 @@ func (g *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) {
 	return visitor.VisitGroupingExpr(g)
 }
 
+type IndexExpr struct {
+	Left     Expr
+	Operator *lexer.Token
+	Right    Expr
+}
+
+func (i *IndexExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitIndexExpr(i) }
+
 type LiteralExpr struct {
 	Value interface{}
 }
@@ -119,6 +127,7 @@ type ExprVisitor interface {
 	VisitCallExpr(expr *CallExpr) (interface{}, error)
 	VisitGetExpr(expr *GetExpr) (interface{}, error)
 	VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
+	VisitIndexExpr(expr *IndexExpr) (interface{}, error)
 	VisitLiteralExpr(expr *LiteralExpr) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpr) (interface{}, error)
 	VisitSetExpr(expr *SetExpr) (interface{}, error)

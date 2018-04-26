@@ -98,6 +98,8 @@ func (p *Parser) assignment() Expr {
 			return &AssignExpr{Name: e.Name, Value: value}
 		case *GetExpr:
 			return &SetExpr{Object: e.Object, Name: e.Name, Value: value}
+		case *IndexExpr:
+			return &SetExpr{Object: e, Name: nil, Value: value}
 		}
 
 		p.addError(equals, "Invalid assignment target.")
@@ -250,7 +252,7 @@ func (p *Parser) index() Expr {
 			return nil
 		}
 
-		expr = &BinaryExpr{Left: expr, Operator: oper, Right: right}
+		expr = &IndexExpr{Left: expr, Operator: oper, Right: right}
 	}
 	return expr
 }

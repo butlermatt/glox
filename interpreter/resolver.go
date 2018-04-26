@@ -253,6 +253,18 @@ func (r *Resolver) VisitGroupingExpr(expr *parser.GroupingExpr) (interface{}, er
 	return nil, r.resolveExpr(expr.Expression)
 }
 
+func (r *Resolver) VisitIndexExpr(expr *parser.IndexExpr) (interface{}, error) {
+	err := r.resolveExpr(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	err = r.resolveExpr(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (r *Resolver) VisitLiteralExpr(expr *parser.LiteralExpr) (interface{}, error) {
 	return nil, nil
 }

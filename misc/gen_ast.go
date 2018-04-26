@@ -21,6 +21,7 @@ func main() {
 		"Call : Callee Expr, Paren *lexer.Token, Args []Expr",
 		"Get : Object Expr, Name *lexer.Token",
 		"Grouping : Expression Expr",
+		"Index : Left Expr, Operator *lexer.Token, Right Expr",
 		"Literal : Value interface{}",
 		"Logical : Left Expr, Operator *lexer.Token, Right Expr",
 		"Set : Object Expr, Name *lexer.Token, Value Expr",

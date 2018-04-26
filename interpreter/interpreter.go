@@ -90,20 +90,6 @@ func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, e
 	}
 
 	switch binary.Operator.Type {
-	case lexer.LBracket:
-		l, err := checkSliceOperand(binary.Operator, left)
-		if err != nil {
-			return nil, err
-		}
-		r, err := checkNumberOperand(binary.Operator, right)
-		if err != nil {
-			return nil, err
-		}
-		ind := int(r)
-		if ind >= len(l) {
-			return nil, newError(binary.Operator, "Index out of range.")
-		}
-		return l[ind], nil
 	case lexer.Greater:
 		l, r, err := checkNumberOperands(binary.Operator, left, right)
 		if err != nil {
@@ -180,6 +166,31 @@ func (i *Interpreter) VisitGroupingExpr(grouping *parser.GroupingExpr) (interfac
 	return i.evaluate(grouping)
 }
 
+func (i *Interpreter) VisitIndexExpr(expr *parser.IndexExpr) (interface{}, error) {
+	left, err := i.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	right, err := i.evaluate(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+
+	l, err := checkSliceOperand(expr.Operator, left)
+	if err != nil {
+		return nil, err
+	}
+	r, err := checkNumberOperand(expr.Operator, right)
+	if err != nil {
+		return nil, err
+	}
+	ind := int(r)
+	if ind >= len(l) {
+		return nil, newError(expr.Operator, "Index out of range.")
+	}
+	return l[ind], nil
+}
+
 func (i *Interpreter) VisitLiteralExpr(literal *parser.LiteralExpr) (interface{}, error) {
 	return literal.Value, nil
 }
@@ -249,23 +260,51 @@ func (i *Interpreter) VisitLogicalExpr(expr *parser.LogicalExpr) (interface{}, e
 }
 
 func (i *Interpreter) VisitSetExpr(expr *parser.SetExpr) (interface{}, error) {
+	if ie, ok := expr.Object.(*parser.IndexExpr); ok {
+		l, err := i.evaluate(ie.Left)
+		if err != nil {
+			return nil, err
+		}
+		arr, err := checkSliceOperand(ie.Operator, l)
+		if err != nil {
+			return nil, err
+		}
+		ind, err := i.evaluate(ie.Right)
+		if err != nil {
+			return nil, err
+		}
+		in, err := checkNumberOperand(ie.Operator, ind)
+		if err != nil {
+			return nil, err
+		}
+		index := int(in)
+		val, err := i.evaluate(expr.Value)
+		if err != nil {
+			return nil, err
+		}
+		if index >= len(arr) {
+			return nil, newError(ie.Operator, "Index out of range.")
+		}
+		arr[index] = val
+		return val, nil
+	}
+
 	obj, err := i.evaluate(expr.Object)
 	if err != nil {
 		return nil, err
 	}
 
-	o, ok := obj.(*LoxInstance)
-	if !ok {
-		return nil, newError(expr.Name, "Only instances have fields.")
+	if o, ok := obj.(*LoxInstance); ok {
+		val, err := i.evaluate(expr.Value)
+		if err != nil {
+			return nil, err
+		}
+		o.Set(expr.Name, val)
+
+		return val, nil
 	}
 
-	val, err := i.evaluate(expr.Value)
-	if err != nil {
-		return nil, err
-	}
-	o.Set(expr.Name, val)
-
-	return val, nil
+	return nil, newError(expr.Name, "Only instances have fields.")
 }
 
 func (i *Interpreter) VisitSuperExpr(expr *parser.SuperExpr) (interface{}, error) {
