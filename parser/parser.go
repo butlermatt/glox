@@ -260,6 +260,20 @@ func (p *Parser) primary() Expr {
 		return &ThisExpr{Keyword: p.prevTok}
 	case p.match(lexer.True):
 		return &LiteralExpr{Value: true}
+	case p.match(lexer.LBracket):
+		vals := []Expr{}
+
+		if !p.check(lexer.RBracket) {
+			vals = append(vals, p.expression())
+			for p.match(lexer.Comma) {
+				vals = append(vals, p.expression())
+			}
+		}
+
+		if !p.consume(lexer.RBracket, "Expect ']' after array values.") {
+			return nil
+		}
+		return &ArrayExpr{Values: vals}
 	case p.match(lexer.LParen):
 		exp := p.expression()
 		if exp == nil {

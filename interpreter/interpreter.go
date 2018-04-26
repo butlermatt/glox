@@ -66,6 +66,19 @@ func (i *Interpreter) resolve(expr parser.Expr, depth int) {
 	i.locals[expr] = depth
 }
 
+func (i *Interpreter) VisitArrayExpr(expr *parser.ArrayExpr) (interface{}, error) {
+	var values []interface{}
+	for _, val := range expr.Values {
+		value, err := i.evaluate(val)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
 func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, error) {
 	left, err := i.evaluate(binary.Left)
 	if err != nil {

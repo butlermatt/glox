@@ -10,6 +10,12 @@ type Stmt interface {
 	Accept(StmtVisitor) error
 }
 
+type ArrayExpr struct {
+	Values []Expr
+}
+
+func (a *ArrayExpr) Accept(visitor ExprVisitor) (interface{}, error) { return visitor.VisitArrayExpr(a) }
+
 type AssignExpr struct {
 	Name  *lexer.Token
 	Value Expr
@@ -107,6 +113,7 @@ func (v *VariableExpr) Accept(visitor ExprVisitor) (interface{}, error) {
 }
 
 type ExprVisitor interface {
+	VisitArrayExpr(expr *ArrayExpr) (interface{}, error)
 	VisitAssignExpr(expr *AssignExpr) (interface{}, error)
 	VisitBinaryExpr(expr *BinaryExpr) (interface{}, error)
 	VisitCallExpr(expr *CallExpr) (interface{}, error)

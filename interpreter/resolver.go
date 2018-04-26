@@ -195,6 +195,16 @@ func (r *Resolver) VisitContinueStmt(stmt *parser.ContinueStmt) error {
 	return nil
 }
 
+func (r *Resolver) VisitArrayExpr(expr *parser.ArrayExpr) (interface{}, error) {
+	for _, value := range expr.Values {
+		err := r.resolveExpr(value)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
 func (r *Resolver) VisitAssignExpr(expr *parser.AssignExpr) (interface{}, error) {
 	err := r.resolveExpr(expr.Value)
 	if err != nil {

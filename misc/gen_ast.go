@@ -15,6 +15,7 @@ func main() {
 	outDir := os.Args[1]
 
 	expressions := []string{
+		"Array : Values []Expr",
 		"Assign : Name *lexer.Token, Value Expr",
 		"Binary : Left Expr, Operator *lexer.Token, Right Expr",
 		"Call : Callee Expr, Paren *lexer.Token, Args []Expr",
