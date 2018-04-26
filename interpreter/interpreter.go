@@ -90,6 +90,20 @@ func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, e
 	}
 
 	switch binary.Operator.Type {
+	case lexer.LBracket:
+		l, err := checkSliceOperand(binary.Operator, left)
+		if err != nil {
+			return nil, err
+		}
+		r, err := checkNumberOperand(binary.Operator, right)
+		if err != nil {
+			return nil, err
+		}
+		ind := int(r)
+		if ind >= len(l) {
+			return nil, newError(binary.Operator, "Index out of range.")
+		}
+		return l[ind], nil
 	case lexer.Greater:
 		l, r, err := checkNumberOperands(binary.Operator, left, right)
 		if err != nil {
@@ -520,6 +534,14 @@ func checkNumberOperands(operator *lexer.Token, left, right interface{}) (float6
 	}
 
 	return l, r, nil
+}
+
+func checkSliceOperand(operator *lexer.Token, operand interface{}) ([]interface{}, error) {
+	sl, ok := operand.([]interface{})
+	if !ok {
+		return nil, newError(operator, "Operand must be an array.")
+	}
+	return sl, nil
 }
 
 func isEqual(left, right interface{}) (bool, error) {

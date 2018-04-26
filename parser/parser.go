@@ -217,7 +217,7 @@ func (p *Parser) unary() Expr {
 }
 
 func (p *Parser) call() Expr {
-	expr := p.primary()
+	expr := p.index()
 
 	for {
 		if p.match(lexer.LParen) {
@@ -233,6 +233,25 @@ func (p *Parser) call() Expr {
 		}
 	}
 
+	return expr
+}
+
+func (p *Parser) index() Expr {
+	expr := p.primary()
+
+	for p.match(lexer.LBracket) {
+		if expr == nil {
+			return nil
+		}
+
+		oper := p.prevTok
+		right := p.expression()
+		if !p.consume(lexer.RBracket, "Expect ']' after index.") {
+			return nil
+		}
+
+		expr = &BinaryExpr{Left: expr, Operator: oper, Right: right}
+	}
 	return expr
 }
 
