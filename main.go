@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/butlermatt/glpc/interpreter"
-	"github.com/butlermatt/glpc/lexer"
-	"github.com/butlermatt/glpc/parser"
+	"github.com/butlermatt/glox/interpreter"
+	"github.com/butlermatt/glox/lexer"
+	"github.com/butlermatt/glox/parser"
 	"io/ioutil"
 	"os"
 )

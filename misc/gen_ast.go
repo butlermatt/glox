@@ -60,7 +60,7 @@ func defineAst(outDir string, expr []string, stmt []string) error {
 	defer file.Close()
 
 	checkWrite(file, "package %s\n", outDir)
-	checkWrite(file, "import \"github.com/butlermatt/glpc/lexer\"\n")
+	checkWrite(file, "import \"github.com/butlermatt/glox/lexer\"\n")
 	checkWrite(file,
 		`type Expr interface {
 	Accept(ExprVisitor) (interface{}, error)

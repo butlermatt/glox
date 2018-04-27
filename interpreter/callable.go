@@ -1,6 +1,6 @@
 package interpreter
 
-import "github.com/butlermatt/glpc/parser"
+import "github.com/butlermatt/glox/parser"
 
 type CallFn func(interpreter *Interpreter, args []interface{}) (interface{}, error)
 

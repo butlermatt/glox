@@ -1,8 +1,8 @@
 package interpreter
 
 import (
-	"github.com/butlermatt/glpc/lexer"
-	"github.com/butlermatt/glpc/parser"
+	"github.com/butlermatt/glox/lexer"
+	"github.com/butlermatt/glox/parser"
 )
 
 type FunctionType int

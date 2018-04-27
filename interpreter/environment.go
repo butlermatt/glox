@@ -2,7 +2,7 @@ package interpreter
 
 import (
 	"fmt"
-	"github.com/butlermatt/glpc/lexer"
+	"github.com/butlermatt/glox/lexer"
 )
 
 type Environment struct {

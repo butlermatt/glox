@@ -1,6 +1,6 @@
 package interpreter
 
-import "github.com/butlermatt/glpc/lexer"
+import "github.com/butlermatt/glox/lexer"
 
 func NewClass(name string, superclass *LoxClass, methods map[string]*Function) *LoxClass {
 	return &LoxClass{Name: name, superclass: superclass, methods: methods}

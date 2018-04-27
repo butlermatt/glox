@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/butlermatt/glpc/lexer"
+import "github.com/butlermatt/glox/lexer"
 
 type Expr interface {
 	Accept(ExprVisitor) (interface{}, error)

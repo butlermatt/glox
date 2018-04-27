@@ -3,8 +3,8 @@ package interpreter
 import (
 	"errors"
 	"fmt"
-	"github.com/butlermatt/glpc/lexer"
-	"github.com/butlermatt/glpc/parser"
+	"github.com/butlermatt/glox/lexer"
+	"github.com/butlermatt/glox/parser"
 	"time"
 )
 
