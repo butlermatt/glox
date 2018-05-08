@@ -148,7 +148,7 @@ func (r *Resolver) VisitReturnStmt(stmt *parser.ReturnStmt) error {
 }
 
 func (r *Resolver) VisitForStmt(stmt *parser.ForStmt) error {
-
+	r.beginScope()
 	err := r.resolveStmt(stmt.Initializer)
 	if err != nil {
 		return err
@@ -166,7 +166,9 @@ func (r *Resolver) VisitForStmt(stmt *parser.ForStmt) error {
 		return err
 	}
 	r.inLoop = oldLoop
-	return r.resolveExpr(stmt.Increment)
+	err = r.resolveExpr(stmt.Increment)
+	r.endScope()
+	return err
 }
 
 func (r *Resolver) VisitVarStmt(stmt *parser.VarStmt) error {
