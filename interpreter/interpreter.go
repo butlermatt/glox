@@ -163,7 +163,7 @@ func (i *Interpreter) VisitBinaryExpr(binary *parser.BinaryExpr) (interface{}, e
 }
 
 func (i *Interpreter) VisitGroupingExpr(grouping *parser.GroupingExpr) (interface{}, error) {
-	return i.evaluate(grouping)
+	return i.evaluate(grouping.Expression)
 }
 
 func (i *Interpreter) VisitIndexExpr(expr *parser.IndexExpr) (interface{}, error) {
