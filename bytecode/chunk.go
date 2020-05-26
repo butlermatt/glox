@@ -4,13 +4,18 @@ type OpCode byte
 
 const (
 	OpConstant OpCode = iota
+	OpAdd
+	OpSubtract
+	OpMultiply
+	OpDivide
+	OpNegate
 	OpReturn
 )
 
 type Chunk struct {
-	Code []byte
+	Code      []byte
 	Constants *ValueArray
-	Lines []int
+	Lines     []int // TODO: Convert to map of lines and chunk count. (eg: 123: 5 -> 5 bytes are on line 123)
 }
 
 // NewChunk returns a new Chunk ready to be written to.
