@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	bc "github.com/butlermatt/glox/bytecode"
+	"github.com/butlermatt/glox/scanner"
 )
 import "github.com/butlermatt/glox/debug"
 
@@ -18,26 +19,27 @@ const DEBUG_TRACE = true
 const STACK_MAX = 256
 
 type VM struct {
-	Chunk *bc.Chunk
-	ip    int
-	Stack [STACK_MAX]bc.Value
-	sTop  int
+	Chunk   *bc.Chunk
+	ip      int
+	Stack   [STACK_MAX]bc.Value
+	sTop    int
+	compiler *scanner.Compiler
 }
 
 func New() *VM {
-	return &VM{}
+	return &VM{compiler: scanner.NewCompiler()}
 }
 
 func (vm *VM) Free() {
+	vm.Chunk.Free()
 	vm.Chunk = nil
 	vm.ip = 0
 	vm.sTop = 0
 }
 
-func (vm *VM) Interpret(chunk *bc.Chunk) InterpretResult {
-	vm.Chunk = chunk
-	vm.ip = 0
-	return vm.run()
+func (vm *VM) Interpret(source string) InterpretResult {
+	vm.compiler.Compile(source)
+	return InterpretOk
 }
 
 func (vm *VM) push(value bc.Value) {

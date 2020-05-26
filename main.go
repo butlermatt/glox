@@ -1,31 +1,56 @@
 package main
 
 import (
-	bc "github.com/butlermatt/glox/bytecode"
-	//"github.com/butlermatt/glox/debug"
+	"bufio"
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
+import (
 	"github.com/butlermatt/glox/vm"
 )
 
 func main() {
-	chunk := bc.NewChunk()
-	cloc := chunk.AddConstant(bc.Value(1.2))
-	chunk.WriteOp(123, bc.OpConstant, cloc)
+	if len(os.Args) == 1 {
+		repl()
+	} else if len(os.Args) == 2 {
+		runFile(os.Args[1])
+	} else {
+		fmt.Fprintf(os.Stderr, "Usage: %s [path]\n", os.Args[0])
+		os.Exit(64)
+	}
+}
 
-	cloc = chunk.AddConstant(3.4)
-	chunk.WriteOp(123, bc.OpConstant, cloc)
-
-	chunk.WriteOp(123, bc.OpAdd)
-
-	cloc = chunk.AddConstant(5.6)
-	chunk.WriteOp(123, bc.OpConstant, cloc)
-
-	chunk.WriteOp(123, bc.OpDivide)
-	chunk.WriteOp(123, bc.OpNegate)
-	chunk.WriteOp(123, bc.OpReturn)
-
-	//debug.DisassembleChunk(chunk, "Test chunk")
+func repl() {
 	v := vm.New()
-	v.Interpret(chunk)
-	chunk.Free()
+	b := bufio.NewScanner(os.Stdin)
+
+	fmt.Printf("> ")
+	for b.Scan() {
+		fmt.Printf("> ")
+		err := v.Interpret(b.Text())
+		if err != vm.InterpretOk {
+			fmt.Println(err)
+		}
+	}
+
+	v.Free()
+}
+
+func runFile(path string) {
+	v := vm.New()
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading file: %+v", err)
+		os.Exit(1)
+	}
+
+	res := v.Interpret(string(data))
+	if res != vm.InterpretOk {
+		fmt.Fprintf(os.Stderr, "%v\n", res)
+		os.Exit(70)
+	}
+
 	v.Free()
 }
