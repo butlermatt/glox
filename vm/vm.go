@@ -19,10 +19,10 @@ const DEBUG_TRACE = true
 const STACK_MAX = 256
 
 type VM struct {
-	Chunk   *bc.Chunk
-	ip      int
-	Stack   [STACK_MAX]bc.Value
-	sTop    int
+	Chunk    *bc.Chunk
+	ip       int
+	Stack    [STACK_MAX]bc.Value
+	sTop     int
 	compiler *scanner.Compiler
 }
 
