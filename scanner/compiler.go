@@ -181,7 +181,7 @@ func (c *Compiler) number() {
 		return
 	}
 
-	c.emitConstant(bc.Value(value))
+	c.emitConstant(bc.NumberValue{Value:value})
 }
 
 func (c *Compiler) grouping() {
@@ -216,6 +216,7 @@ func (c *Compiler) binary() {
 	case TokenStar:
 		c.emitBytes(bc.OpMultiply)
 	case TokenSlash:
+		fmt.Println("Emitting opDivide")
 		c.emitBytes(bc.OpDivide)
 	default:
 		return

@@ -58,5 +58,5 @@ func constantInstruction(name string, c *bc.Chunk, offset int) int {
 }
 
 func PrintValue(value bc.Value) {
-	fmt.Printf("%g", value)
+	fmt.Printf("%g", value.(bc.NumberValue).Value)
 }

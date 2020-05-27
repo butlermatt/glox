@@ -4,6 +4,7 @@ import (
 	"fmt"
 	bc "github.com/butlermatt/glox/bytecode"
 	"github.com/butlermatt/glox/scanner"
+	"os"
 )
 import "github.com/butlermatt/glox/debug"
 
@@ -88,9 +89,18 @@ func (vm *VM) run() InterpretResult {
 			vm.ip++
 			vm.push(con)
 		case bc.OpAdd, bc.OpSubtract, bc.OpMultiply, bc.OpDivide:
-			vm.binaryOp(inst)
+			err := vm.binaryOp(inst)
+			if err != InterpretOk {
+				return err
+			}
 		case bc.OpNegate:
-			vm.push(-vm.pop())
+			ty := vm.peek(0).Type()
+			if ty != bc.ValNumber {
+				vm.runtimeError("Operand must be a number.")
+				return InterpretRuntimeError
+			}
+			obj := vm.pop().(bc.NumberValue)
+			vm.push(bc.NumberValue{Value: -(obj.Value)})
 		case bc.OpReturn:
 			debug.PrintValue(vm.pop())
 			fmt.Println()
@@ -99,18 +109,38 @@ func (vm *VM) run() InterpretResult {
 	}
 }
 
-func (vm *VM) binaryOp(op bc.OpCode) {
-	right := vm.pop()
-	left := vm.pop()
+func (vm *VM) peek(distance int) bc.Value {
+	return vm.Stack[vm.sTop - 1 - distance]
+}
+
+func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
+	rType := vm.peek(0).Type()
+	lType := vm.peek(1).Type()
+
+	if rType != lType && rType != bc.ValNumber {
+		vm.runtimeError("Operands must be numbers.")
+		return InterpretRuntimeError
+	}
+
+	right := vm.pop().(bc.NumberValue)
+	left := vm.pop().(bc.NumberValue)
 
 	switch op {
 	case bc.OpAdd:
-		vm.push(left + right)
+		vm.push(bc.NumberValue{Value: left.Value + right.Value})
 	case bc.OpSubtract:
-		vm.push(left - right)
+		vm.push(bc.NumberValue{Value:left.Value - right.Value})
 	case bc.OpMultiply:
-		vm.push(left * right)
+		vm.push(bc.NumberValue{Value: left.Value * right.Value})
 	case bc.OpDivide:
-		vm.push(left / right)
+		vm.push(bc.NumberValue{Value: left.Value / right.Value})
 	}
+
+	return InterpretOk
+}
+
+func (vm *VM) runtimeError(msg string, args ...interface{}) {
+	_, _ = fmt.Fprintf(os.Stderr, msg, args...)
+	line := vm.Chunk.Lines[vm.ip - 1]
+	_, _ = fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
 }

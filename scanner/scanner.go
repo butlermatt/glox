@@ -78,7 +78,7 @@ func (s *Scanner) ScanToken() Token {
 		return s.string()
 	}
 
-	return errorToken("Unexpected character.", s.line)
+	return errorToken("Unexpected character: '" + string(c) + "'", s.line)
 }
 
 func (s *Scanner) skipWhitespace() {
@@ -95,6 +95,8 @@ func (s *Scanner) skipWhitespace() {
 				for s.peek() != '\n' && !s.isAtEnd() {
 					s.advance()
 				}
+			} else {
+				return
 			}
 		default:
 			return
@@ -230,7 +232,7 @@ func (s *Scanner) checkKeyword(keyword string, tok TokenType) TokenType {
 }
 
 func isDigit(c byte) bool {
-	return c >= '0' && c < '9'
+	return c >= '0' && c <= '9'
 }
 
 func isAlpha(c byte) bool {

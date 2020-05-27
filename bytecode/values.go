@@ -1,6 +1,40 @@
 package bytecode
 
-type Value float64
+type ValueType byte
+const (
+	// ValueType bool
+	ValBool   ValueType = iota
+	// ValueType nil
+	ValNil
+	// ValueType Number
+	ValNumber
+)
+
+type Value interface {
+	Type() ValueType
+}
+
+// Boolean Value
+type BoolValue struct {
+	Value bool
+}
+func (bv BoolValue) Type() ValueType { return ValBool }
+
+var True = BoolValue{Value: true}
+
+// Nil Value
+type NilValue struct {}
+func (nv NilValue) Type() ValueType { return ValNil }
+
+var Nil = NilValue{}
+
+// Number Value
+type NumberValue struct {
+	Value float64
+}
+func (num NumberValue) Type() ValueType { return ValNumber }
+
+// type Value float64
 
 type ValueArray struct {
 	Values []Value
