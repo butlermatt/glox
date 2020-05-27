@@ -26,6 +26,12 @@ func DisassembleInstruction(c *bc.Chunk, offset int) int {
 	switch instruction {
 	case bc.OpConstant:
 		return constantInstruction("OP_CONSTANT", c, offset)
+	case bc.OpNil:
+		return simpleInstruction("OP_NIL", offset)
+	case bc.OpTrue:
+		return simpleInstruction("OP_TRUE", offset)
+	case bc.OpFalse:
+		return simpleInstruction("OP_FALSE", offset)
 	case bc.OpAdd:
 		return simpleInstruction("OP_ADD", offset)
 	case bc.OpSubtract:
@@ -58,5 +64,16 @@ func constantInstruction(name string, c *bc.Chunk, offset int) int {
 }
 
 func PrintValue(value bc.Value) {
-	fmt.Printf("%g", value.(bc.NumberValue).Value)
+	switch value.Type() {
+	case bc.ValBool:
+		if value == bc.True {
+			fmt.Printf("true")
+		} else {
+			fmt.Printf("false")
+		}
+	case bc.ValNil:
+		fmt.Printf("nil")
+	case bc.ValNumber:
+		fmt.Printf("%g", value.(bc.NumberValue).Value)
+	}
 }

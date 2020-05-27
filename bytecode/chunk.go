@@ -4,6 +4,9 @@ type OpCode byte
 
 const (
 	OpConstant OpCode = iota
+	OpNil
+	OpTrue
+	OpFalse
 	OpAdd
 	OpSubtract
 	OpMultiply

@@ -88,6 +88,12 @@ func (vm *VM) run() InterpretResult {
 			con := vm.Chunk.Constants.Values[vm.Chunk.Code[vm.ip]]
 			vm.ip++
 			vm.push(con)
+		case bc.OpNil:
+			vm.push(bc.Nil)
+		case bc.OpTrue:
+			vm.push(bc.True)
+		case bc.OpFalse:
+			vm.push(bc.False)
 		case bc.OpAdd, bc.OpSubtract, bc.OpMultiply, bc.OpDivide:
 			err := vm.binaryOp(inst)
 			if err != InterpretOk {
@@ -110,7 +116,7 @@ func (vm *VM) run() InterpretResult {
 }
 
 func (vm *VM) peek(distance int) bc.Value {
-	return vm.Stack[vm.sTop - 1 - distance]
+	return vm.Stack[vm.sTop-1-distance]
 }
 
 func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
@@ -129,7 +135,7 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 	case bc.OpAdd:
 		vm.push(bc.NumberValue{Value: left.Value + right.Value})
 	case bc.OpSubtract:
-		vm.push(bc.NumberValue{Value:left.Value - right.Value})
+		vm.push(bc.NumberValue{Value: left.Value - right.Value})
 	case bc.OpMultiply:
 		vm.push(bc.NumberValue{Value: left.Value * right.Value})
 	case bc.OpDivide:
@@ -141,6 +147,6 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 
 func (vm *VM) runtimeError(msg string, args ...interface{}) {
 	_, _ = fmt.Fprintf(os.Stderr, msg, args...)
-	line := vm.Chunk.Lines[vm.ip - 1]
+	line := vm.Chunk.Lines[vm.ip-1]
 	_, _ = fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
 }

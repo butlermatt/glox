@@ -54,46 +54,50 @@ type ParseRule struct {
 func NewCompiler() *Compiler {
 	c := &Compiler{}
 	c.rules = []ParseRule{
-		{c.grouping, nil, PrecNone},		// LParen
-		{nil, nil, PrecNone},				// RParen
-		{nil, nil, PrecNone},				// LBrace
-		{nil, nil, PrecNone},				// RBrace
-		{nil, nil, PrecNone},				// Comma
-		{nil, nil, PrecNone},				// Dot
-		{c.unary, c.binary, PrecTerm},	// Minus
-		{nil, c.binary, PrecTerm},		// Plus
-		{nil, nil, PrecNone},				// Semicolon
-		{nil, c.binary, PrecFactor},		// Slash
-		{nil, c.binary, PrecFactor},		// Star
-		{nil, nil, PrecNone},				// Bang
-		{nil, nil, PrecNone},				// BangEq
-		{nil, nil, PrecNone},				// Equal
-		{nil, nil, PrecNone},				// EqualEq
-		{nil, nil, PrecNone},				// Greater
-		{nil, nil, PrecNone},				// GreaterEq
-		{nil, nil, PrecNone},				// Less
-		{nil, nil, PrecNone},				// LessEq
-		{nil, nil, PrecNone},				// Ident
-		{nil, nil, PrecNone},				// String
-		{c.number, nil, PrecNone},		// Number
-		{nil, nil, PrecNone},				// And
-		{nil, nil, PrecNone},				// Class
-		{nil, nil, PrecNone},				// Else
-		{nil, nil, PrecNone},				// False
-		{nil, nil, PrecNone},				// For
-		{nil, nil, PrecNone},				// Fun
-		{nil, nil, PrecNone},				// If
-		{nil, nil, PrecNone},				// Nil
-		{nil, nil, PrecNone},				// Or
-		{nil, nil, PrecNone},				// Print
-		{nil, nil, PrecNone},				// Return
-		{nil, nil, PrecNone},				// Super
-		{nil, nil, PrecNone},				// This
-		{nil, nil, PrecNone},				// True
-		{nil, nil, PrecNone},				// Var
-		{nil, nil, PrecNone},				// While
-		{nil, nil, PrecNone},				// Error
-		{nil, nil, PrecNone},				// Eof
+		{c.grouping, nil, PrecNone},   // LParen
+		{nil, nil, PrecNone},          // RParen
+		{nil, nil, PrecNone},          // LBrace
+		{nil, nil, PrecNone},          // RBrace
+		{nil, nil, PrecNone},          // Comma
+		{nil, nil, PrecNone},          // Dot
+		{c.unary, c.binary, PrecTerm}, // Minus
+		{nil, c.binary, PrecTerm},     // Plus
+		{nil, nil, PrecNone},          // Semicolon
+		{nil, c.binary, PrecFactor},   // Slash
+		{nil, c.binary, PrecFactor},   // Star
+
+		{nil, nil, PrecNone}, // Bang
+		{nil, nil, PrecNone}, // BangEq
+		{nil, nil, PrecNone}, // Equal
+		{nil, nil, PrecNone}, // EqualEq
+		{nil, nil, PrecNone}, // Greater
+		{nil, nil, PrecNone}, // GreaterEq
+		{nil, nil, PrecNone}, // Less
+		{nil, nil, PrecNone}, // LessEq
+
+		{nil, nil, PrecNone},      // Ident
+		{nil, nil, PrecNone},      // String
+		{c.number, nil, PrecNone}, // Number
+
+		{nil, nil, PrecNone},       // And
+		{nil, nil, PrecNone},       // Class
+		{nil, nil, PrecNone},       // Else
+		{c.literal, nil, PrecNone}, // False
+		{nil, nil, PrecNone},       // For
+		{nil, nil, PrecNone},       // Fun
+		{nil, nil, PrecNone},       // If
+		{c.literal, nil, PrecNone}, // Nil
+		{nil, nil, PrecNone},       // Or
+		{nil, nil, PrecNone},       // Print
+		{nil, nil, PrecNone},       // Return
+		{nil, nil, PrecNone},       // Super
+		{nil, nil, PrecNone},       // This
+		{c.literal, nil, PrecNone}, // True
+		{nil, nil, PrecNone},       // Var
+		{nil, nil, PrecNone},       // While
+
+		{nil, nil, PrecNone}, // Error
+		{nil, nil, PrecNone}, // Eof
 	}
 
 	return c
@@ -181,7 +185,7 @@ func (c *Compiler) number() {
 		return
 	}
 
-	c.emitConstant(bc.NumberValue{Value:value})
+	c.emitConstant(bc.NumberValue{Value: value})
 }
 
 func (c *Compiler) grouping() {
@@ -216,10 +220,22 @@ func (c *Compiler) binary() {
 	case TokenStar:
 		c.emitBytes(bc.OpMultiply)
 	case TokenSlash:
-		fmt.Println("Emitting opDivide")
 		c.emitBytes(bc.OpDivide)
 	default:
 		return
+	}
+}
+
+func (c *Compiler) literal() {
+	switch c.parser.previous.Type {
+	case TokenFalse:
+		c.emitBytes(bc.OpFalse)
+	case TokenNil:
+		c.emitBytes(bc.OpNil)
+	case TokenTrue:
+		c.emitBytes(bc.OpTrue)
+	default:
+		return // unreachable
 	}
 }
 

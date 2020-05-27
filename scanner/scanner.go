@@ -1,5 +1,7 @@
 package scanner
 
+import "fmt"
+
 type Scanner struct {
 	source  string
 	start   int
@@ -78,7 +80,7 @@ func (s *Scanner) ScanToken() Token {
 		return s.string()
 	}
 
-	return errorToken("Unexpected character: '" + string(c) + "'", s.line)
+	return errorToken("Unexpected character: '"+string(c)+"'", s.line)
 }
 
 func (s *Scanner) skipWhitespace() {
@@ -187,11 +189,11 @@ func (s *Scanner) identifierType() TokenType {
 		if s.current-s.start > 1 {
 			switch s.source[s.start+1] {
 			case 'a':
-				s.checkKeyword("false", TokenFalse)
+				return s.checkKeyword("false", TokenFalse)
 			case 'o':
-				s.checkKeyword("for", TokenFor)
+				return s.checkKeyword("for", TokenFor)
 			case 'u':
-				s.checkKeyword("fun", TokenFun)
+				return s.checkKeyword("fun", TokenFun)
 			}
 		}
 	case 'i':
@@ -225,6 +227,7 @@ func (s *Scanner) identifierType() TokenType {
 }
 
 func (s *Scanner) checkKeyword(keyword string, tok TokenType) TokenType {
+	fmt.Printf("%s\n", s.source[s.start:s.current])
 	if s.source[s.start:s.current] == keyword {
 		return tok
 	}

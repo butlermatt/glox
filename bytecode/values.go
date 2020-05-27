@@ -1,9 +1,10 @@
 package bytecode
 
 type ValueType byte
+
 const (
 	// ValueType bool
-	ValBool   ValueType = iota
+	ValBool ValueType = iota
 	// ValueType nil
 	ValNil
 	// ValueType Number
@@ -18,12 +19,15 @@ type Value interface {
 type BoolValue struct {
 	Value bool
 }
+
 func (bv BoolValue) Type() ValueType { return ValBool }
 
 var True = BoolValue{Value: true}
+var False = BoolValue{Value: false}
 
 // Nil Value
-type NilValue struct {}
+type NilValue struct{}
+
 func (nv NilValue) Type() ValueType { return ValNil }
 
 var Nil = NilValue{}
@@ -32,6 +36,7 @@ var Nil = NilValue{}
 type NumberValue struct {
 	Value float64
 }
+
 func (num NumberValue) Type() ValueType { return ValNumber }
 
 // type Value float64
