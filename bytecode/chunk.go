@@ -30,11 +30,11 @@ func (c *Chunk) Write(line int, b byte) {
 }
 
 // WriteOp is a convenience wrapper around Write() to allow OpCodes to be passed directly rather than manually casting
-func (c *Chunk) WriteOp(line int, op OpCode, args ...int) {
+func (c *Chunk) WriteOp(line int, op OpCode, args ...byte) {
 	c.Write(line, byte(op))
 
 	for _, a := range args {
-		c.Write(line, byte(a))
+		c.Write(line, a)
 	}
 }
 

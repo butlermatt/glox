@@ -92,17 +92,28 @@ func (s *Scanner) ScanToken() Token {
 	}
 
 	switch c {
-	case '(': return NewToken(TokenLParen, s.source[s.start:s.current], s.line)
-	case ')': return NewToken(TokenRParen, s.source[s.start:s.current], s.line)
-	case '{': return NewToken(TokenLBrace, s.source[s.start:s.current], s.line)
-	case '}': return NewToken(TokenRBrace, s.source[s.start:s.current], s.line)
-	case ';': return NewToken(TokenSemicolon, s.source[s.start:s.current], s.line)
-	case ',': return NewToken(TokenComma, s.source[s.start:s.current], s.line)
-	case '.': return NewToken(TokenDot, s.source[s.start:s.current], s.line)
-	case '-': return NewToken(TokenMinus, s.source[s.start:s.current], s.line)
-	case '+': return NewToken(TokenPlus, s.source[s.start:s.current], s.line)
-	case '/': return NewToken(TokenSlash, s.source[s.start:s.current], s.line)
-	case '*': return NewToken(TokenStar, s.source[s.start:s.current], s.line)
+	case '(':
+		return NewToken(TokenLParen, s.source[s.start:s.current], s.line)
+	case ')':
+		return NewToken(TokenRParen, s.source[s.start:s.current], s.line)
+	case '{':
+		return NewToken(TokenLBrace, s.source[s.start:s.current], s.line)
+	case '}':
+		return NewToken(TokenRBrace, s.source[s.start:s.current], s.line)
+	case ';':
+		return NewToken(TokenSemicolon, s.source[s.start:s.current], s.line)
+	case ',':
+		return NewToken(TokenComma, s.source[s.start:s.current], s.line)
+	case '.':
+		return NewToken(TokenDot, s.source[s.start:s.current], s.line)
+	case '-':
+		return NewToken(TokenMinus, s.source[s.start:s.current], s.line)
+	case '+':
+		return NewToken(TokenPlus, s.source[s.start:s.current], s.line)
+	case '/':
+		return NewToken(TokenSlash, s.source[s.start:s.current], s.line)
+	case '*':
+		return NewToken(TokenStar, s.source[s.start:s.current], s.line)
 	case '!':
 		if s.match('=') {
 			return NewToken(TokenBangEq, s.source[s.start:s.current], s.line)
@@ -145,7 +156,9 @@ func (s *Scanner) skipWhitespace() {
 			s.advance()
 		case '/':
 			if s.peekNext() == '/' {
-				for s.peek() != '\n' && !s.isAtEnd() { s.advance() }
+				for s.peek() != '\n' && !s.isAtEnd() {
+					s.advance()
+				}
 			}
 		default:
 			return
@@ -159,7 +172,7 @@ func (s *Scanner) isAtEnd() bool {
 
 func (s *Scanner) advance() byte {
 	s.current++
-	return s.source[s.current - 1]
+	return s.source[s.current-1]
 }
 
 func (s *Scanner) peek() byte {
@@ -170,10 +183,10 @@ func (s *Scanner) peek() byte {
 }
 
 func (s *Scanner) peekNext() byte {
-	if s.current + 1 >= len(s.source) {
+	if s.current+1 >= len(s.source) {
 		return 0
 	}
-	return s.source[s.current + 1]
+	return s.source[s.current+1]
 }
 
 func (s *Scanner) match(c byte) bool {
@@ -226,32 +239,48 @@ func (s *Scanner) identifier() Token {
 
 func (s *Scanner) identifierType() TokenType {
 	switch s.source[s.start] {
-	case 'a': return s.checkKeyword("and", TokenAnd)
-	case 'c': return s.checkKeyword("class", TokenClass)
-	case 'e': return s.checkKeyword("else", TokenElse)
+	case 'a':
+		return s.checkKeyword("and", TokenAnd)
+	case 'c':
+		return s.checkKeyword("class", TokenClass)
+	case 'e':
+		return s.checkKeyword("else", TokenElse)
 	case 'f':
-		if s.current - s.start > 1 {
-			switch s.source[s.start + 1] {
-			case 'a': s.checkKeyword("false", TokenFalse)
-			case 'o': s.checkKeyword("for", TokenFor)
-			case 'u': s.checkKeyword("fun", TokenFun)
+		if s.current-s.start > 1 {
+			switch s.source[s.start+1] {
+			case 'a':
+				s.checkKeyword("false", TokenFalse)
+			case 'o':
+				s.checkKeyword("for", TokenFor)
+			case 'u':
+				s.checkKeyword("fun", TokenFun)
 			}
 		}
-	case 'i': return s.checkKeyword("if", TokenIf)
-	case 'n': return s.checkKeyword("nil", TokenNil)
-	case 'o': return s.checkKeyword("or", TokenOr)
-	case 'p': return s.checkKeyword("print", TokenPrint)
-	case 'r': return s.checkKeyword("return", TokenReturn)
-	case 's': return s.checkKeyword("super", TokenSuper)
+	case 'i':
+		return s.checkKeyword("if", TokenIf)
+	case 'n':
+		return s.checkKeyword("nil", TokenNil)
+	case 'o':
+		return s.checkKeyword("or", TokenOr)
+	case 'p':
+		return s.checkKeyword("print", TokenPrint)
+	case 'r':
+		return s.checkKeyword("return", TokenReturn)
+	case 's':
+		return s.checkKeyword("super", TokenSuper)
 	case 't':
-		if s.current - s.start > 1 {
-			switch s.source[s.start + 1] {
-			case 'h': return s.checkKeyword("this", TokenThis)
-			case 'r': return s.checkKeyword("true", TokenTrue)
+		if s.current-s.start > 1 {
+			switch s.source[s.start+1] {
+			case 'h':
+				return s.checkKeyword("this", TokenThis)
+			case 'r':
+				return s.checkKeyword("true", TokenTrue)
 			}
 		}
-	case 'v': return s.checkKeyword("var", TokenVar)
-	case 'w': return s.checkKeyword("while", TokenWhile)
+	case 'v':
+		return s.checkKeyword("var", TokenVar)
+	case 'w':
+		return s.checkKeyword("while", TokenWhile)
 	}
 
 	return TokenIdent
@@ -269,7 +298,7 @@ func isDigit(c byte) bool {
 }
 
 func isAlpha(c byte) bool {
-	return  (c >= 'a' && c <= 'z') ||
-			(c >= 'A' && c <= 'Z') ||
-			c == '_'
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		c == '_'
 }

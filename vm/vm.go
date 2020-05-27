@@ -38,8 +38,20 @@ func (vm *VM) Free() {
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
-	vm.compiler.Compile(source)
-	return InterpretOk
+	c := bc.NewChunk()
+
+	if !vm.compiler.Compile(source, c) {
+		c.Free()
+		return InterpretCompileError
+	}
+
+	vm.Chunk = c
+	vm.ip = 0
+
+	result := vm.run()
+
+	vm.Chunk.Free()
+	return result
 }
 
 func (vm *VM) push(value bc.Value) {
