@@ -66,14 +66,14 @@ func NewCompiler() *Compiler {
 		{nil, c.binary, PrecFactor},   // Slash
 		{nil, c.binary, PrecFactor},   // Star
 
-		{nil, nil, PrecNone}, // Bang
-		{nil, nil, PrecNone}, // BangEq
-		{nil, nil, PrecNone}, // Equal
-		{nil, nil, PrecNone}, // EqualEq
-		{nil, nil, PrecNone}, // Greater
-		{nil, nil, PrecNone}, // GreaterEq
-		{nil, nil, PrecNone}, // Less
-		{nil, nil, PrecNone}, // LessEq
+		{c.unary, nil, PrecNone},        // Bang
+		{nil, c.binary, PrecEquality},   // BangEq
+		{nil, nil, PrecNone},            // Equal
+		{nil, c.binary, PrecEquality},   // EqualEq
+		{nil, c.binary, PrecComparison}, // Greater
+		{nil, c.binary, PrecComparison}, // GreaterEq
+		{nil, c.binary, PrecComparison}, // Less
+		{nil, c.binary, PrecComparison}, // LessEq
 
 		{nil, nil, PrecNone},      // Ident
 		{nil, nil, PrecNone},      // String
@@ -199,6 +199,8 @@ func (c *Compiler) unary() {
 	c.parsePrecedence(PrecUnary)
 
 	switch operType {
+	case TokenBang:
+		c.emitBytes(bc.OpNot)
 	case TokenMinus:
 		c.emitBytes(bc.OpNegate)
 	default:
@@ -213,6 +215,18 @@ func (c *Compiler) binary() {
 	c.parsePrecedence(rule.prec + 1)
 
 	switch operType {
+	case TokenBangEq:
+		c.emitBytes(bc.OpEqual, byte(bc.OpNot))
+	case TokenEqualEq:
+		c.emitBytes(bc.OpEqual)
+	case TokenGreater:
+		c.emitBytes(bc.OpGreater)
+	case TokenGreaterEq:
+		c.emitBytes(bc.OpLess, byte(bc.OpNot))
+	case TokenLess:
+		c.emitBytes(bc.OpLess)
+	case TokenLessEq:
+		c.emitBytes(bc.OpGreater, byte(bc.OpNot))
 	case TokenPlus:
 		c.emitBytes(bc.OpAdd)
 	case TokenMinus:

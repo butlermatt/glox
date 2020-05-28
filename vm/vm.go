@@ -94,11 +94,19 @@ func (vm *VM) run() InterpretResult {
 			vm.push(bc.True)
 		case bc.OpFalse:
 			vm.push(bc.False)
+		case bc.OpEqual:
+			r := vm.pop()
+			l := vm.pop()
+			vm.push(bc.BoolAsValue(valuesEqual(l, r)))
+		case bc.OpGreater, bc.OpLess:
+			fallthrough
 		case bc.OpAdd, bc.OpSubtract, bc.OpMultiply, bc.OpDivide:
 			err := vm.binaryOp(inst)
 			if err != InterpretOk {
 				return err
 			}
+		case bc.OpNot:
+			vm.push(bc.BoolAsValue(isFalsey(vm.pop())))
 		case bc.OpNegate:
 			ty := vm.peek(0).Type()
 			if ty != bc.ValNumber {
@@ -123,7 +131,7 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 	rType := vm.peek(0).Type()
 	lType := vm.peek(1).Type()
 
-	if rType != lType && rType != bc.ValNumber {
+	if lType != rType && lType != bc.ValNumber {
 		vm.runtimeError("Operands must be numbers.")
 		return InterpretRuntimeError
 	}
@@ -132,6 +140,10 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 	left := vm.pop().(bc.NumberValue)
 
 	switch op {
+	case bc.OpGreater:
+		vm.push(bc.BoolAsValue(left.Value > right.Value))
+	case bc.OpLess:
+		vm.push(bc.BoolAsValue(left.Value < right.Value))
 	case bc.OpAdd:
 		vm.push(bc.NumberValue{Value: left.Value + right.Value})
 	case bc.OpSubtract:
@@ -149,4 +161,36 @@ func (vm *VM) runtimeError(msg string, args ...interface{}) {
 	_, _ = fmt.Fprintf(os.Stderr, msg, args...)
 	line := vm.Chunk.Lines[vm.ip-1]
 	_, _ = fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+}
+
+func isFalsey(value bc.Value) bool {
+	if value.Type() == bc.ValNil {
+		return true
+	}
+
+	if value.Type() == bc.ValBool {
+		b := value.(bc.BoolValue)
+		return !b.Value
+	}
+
+	return false
+}
+
+func valuesEqual(l, r bc.Value) bool {
+	if l.Type() != r.Type() {
+		return false
+	}
+
+	switch lv := l.(type) {
+	case bc.BoolValue:
+		rv := r.(bc.BoolValue)
+		return lv.Value == rv.Value
+	case bc.NilValue:
+		return true
+	case bc.NumberValue:
+		rv := r.(bc.NumberValue)
+		return lv.Value == rv.Value
+	default:
+		return false // Should not reach here
+	}
 }

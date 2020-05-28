@@ -25,6 +25,13 @@ func (bv BoolValue) Type() ValueType { return ValBool }
 var True = BoolValue{Value: true}
 var False = BoolValue{Value: false}
 
+func BoolAsValue(b bool) BoolValue {
+	if b {
+		return True
+	}
+	return False
+}
+
 // Nil Value
 type NilValue struct{}
 
