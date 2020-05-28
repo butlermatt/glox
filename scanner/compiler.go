@@ -76,7 +76,7 @@ func NewCompiler() *Compiler {
 		{nil, c.binary, PrecComparison}, // LessEq
 
 		{nil, nil, PrecNone},      // Ident
-		{nil, nil, PrecNone},      // String
+		{c.string, nil, PrecNone},      // String
 		{c.number, nil, PrecNone}, // Number
 
 		{nil, nil, PrecNone},       // And
@@ -251,6 +251,12 @@ func (c *Compiler) literal() {
 	default:
 		return // unreachable
 	}
+}
+
+func (c *Compiler) string() {
+	str := c.parser.previous.Lexeme[1:len(c.parser.previous.Lexeme) - 1]
+	sobj := bc.StringAsValue(str)
+	c.emitConstant(sobj)
 }
 
 func (c *Compiler) parsePrecedence(prec Precedence) {

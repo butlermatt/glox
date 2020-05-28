@@ -9,6 +9,8 @@ const (
 	ValNil
 	// ValueType Number
 	ValNumber
+	// ValueType Object
+	ValObj
 )
 
 type Value interface {
@@ -46,7 +48,6 @@ type NumberValue struct {
 
 func (num NumberValue) Type() ValueType { return ValNumber }
 
-// type Value float64
 
 type ValueArray struct {
 	Values []Value

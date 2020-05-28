@@ -28,6 +28,7 @@ type VM struct {
 }
 
 func New() *VM {
+	bc.Objects = nil
 	return &VM{compiler: scanner.NewCompiler()}
 }
 
@@ -36,6 +37,8 @@ func (vm *VM) Free() {
 	vm.Chunk = nil
 	vm.ip = 0
 	vm.sTop = 0
+
+	bc.FreeObjects()
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
@@ -51,7 +54,7 @@ func (vm *VM) Interpret(source string) InterpretResult {
 
 	result := vm.run()
 
-	vm.Chunk.Free()
+	vm.Free()
 	return result
 }
 
@@ -99,8 +102,22 @@ func (vm *VM) run() InterpretResult {
 			l := vm.pop()
 			vm.push(bc.BoolAsValue(valuesEqual(l, r)))
 		case bc.OpGreater, bc.OpLess:
-			fallthrough
-		case bc.OpAdd, bc.OpSubtract, bc.OpMultiply, bc.OpDivide:
+			err := vm.binaryOp(inst)
+			if err != InterpretOk {
+				return err
+			}
+		case bc.OpAdd:
+			if bc.IsString(vm.peek(0)) && bc.IsString(vm.peek(1)) {
+				vm.concatenate()
+			} else if vm.peek(0).Type() == bc.ValNumber && vm.peek(1).Type() == bc.ValNumber {
+				right := vm.pop().(bc.NumberValue)
+				left := vm.pop().(bc.NumberValue)
+				vm.push(bc.NumberValue{Value: left.Value + right.Value})
+			} else {
+				vm.runtimeError("Operands must be two numbers or two strings.")
+				return InterpretRuntimeError
+			}
+		case bc.OpSubtract, bc.OpMultiply, bc.OpDivide:
 			err := vm.binaryOp(inst)
 			if err != InterpretOk {
 				return err
@@ -144,8 +161,6 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 		vm.push(bc.BoolAsValue(left.Value > right.Value))
 	case bc.OpLess:
 		vm.push(bc.BoolAsValue(left.Value < right.Value))
-	case bc.OpAdd:
-		vm.push(bc.NumberValue{Value: left.Value + right.Value})
 	case bc.OpSubtract:
 		vm.push(bc.NumberValue{Value: left.Value - right.Value})
 	case bc.OpMultiply:
@@ -155,6 +170,13 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 	}
 
 	return InterpretOk
+}
+
+func (vm *VM) concatenate() {
+	right := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
+	left  := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
+
+	vm.push(bc.StringAsValue(left.Value + right.Value))
 }
 
 func (vm *VM) runtimeError(msg string, args ...interface{}) {
@@ -190,6 +212,10 @@ func valuesEqual(l, r bc.Value) bool {
 	case bc.NumberValue:
 		rv := r.(bc.NumberValue)
 		return lv.Value == rv.Value
+	case bc.ObjValue:
+		lobj := lv.Value.(*bc.StringObj)
+		robj := r.(bc.ObjValue).Value.(*bc.StringObj)
+		return lobj.Value == robj.Value
 	default:
 		return false // Should not reach here
 	}

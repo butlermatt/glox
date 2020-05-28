@@ -83,5 +83,14 @@ func PrintValue(value bc.Value) {
 		fmt.Printf("nil")
 	case bc.ValNumber:
 		fmt.Printf("%g", value.(bc.NumberValue).Value)
+	case bc.ValObj:
+		printObject(value.(bc.ObjValue).Value)
+	}
+}
+
+func printObject(value bc.Obj) {
+	switch v := value.(type) {
+	case *bc.StringObj:
+		fmt.Printf("%s", v.Value)
 	}
 }
