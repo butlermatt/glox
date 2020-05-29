@@ -24,12 +24,14 @@ type VM struct {
 	ip       int
 	Stack    [STACK_MAX]bc.Value
 	sTop     int
+	strings  *bc.Table
+
 	compiler *scanner.Compiler
 }
 
 func New() *VM {
 	bc.Objects = nil
-	return &VM{compiler: scanner.NewCompiler()}
+	return &VM{strings: bc.NewTable(), compiler: scanner.NewCompiler()}
 }
 
 func (vm *VM) Free() {
@@ -39,12 +41,13 @@ func (vm *VM) Free() {
 	vm.sTop = 0
 
 	bc.FreeObjects()
+	vm.strings.Free()
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
 	c := bc.NewChunk()
 
-	if !vm.compiler.Compile(source, c) {
+	if !vm.compiler.Compile(vm.strings, source, c) {
 		c.Free()
 		return InterpretCompileError
 	}
@@ -176,7 +179,7 @@ func (vm *VM) concatenate() {
 	right := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
 	left  := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
 
-	vm.push(bc.StringAsValue(left.Value + right.Value))
+	vm.push(bc.StringAsValue(vm.strings, left.Value + right.Value))
 }
 
 func (vm *VM) runtimeError(msg string, args ...interface{}) {
@@ -215,7 +218,7 @@ func valuesEqual(l, r bc.Value) bool {
 	case bc.ObjValue:
 		lobj := lv.Value.(*bc.StringObj)
 		robj := r.(bc.ObjValue).Value.(*bc.StringObj)
-		return lobj.Value == robj.Value
+		return lobj == robj
 	default:
 		return false // Should not reach here
 	}

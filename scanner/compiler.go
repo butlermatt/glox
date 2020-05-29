@@ -26,6 +26,7 @@ type Compiler struct {
 	parser         Parser
 	compilingChunk *bc.Chunk
 	rules          []ParseRule
+	strings 	   *bc.Table
 }
 
 type Precedence byte
@@ -103,10 +104,11 @@ func NewCompiler() *Compiler {
 	return c
 }
 
-func (c *Compiler) Compile(source string, chunk *bc.Chunk) bool {
+func (c *Compiler) Compile(tbl *bc.Table, source string, chunk *bc.Chunk) bool {
 	c.scan = New(source)
 	c.compilingChunk = chunk
 	c.parser = Parser{}
+	c.strings = tbl
 
 	c.Advance()
 	c.expression()
@@ -255,7 +257,7 @@ func (c *Compiler) literal() {
 
 func (c *Compiler) string() {
 	str := c.parser.previous.Lexeme[1:len(c.parser.previous.Lexeme) - 1]
-	sobj := bc.StringAsValue(str)
+	sobj := bc.StringAsValue(c.strings, str)
 	c.emitConstant(sobj)
 }
 

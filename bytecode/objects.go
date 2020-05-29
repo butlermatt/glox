@@ -42,9 +42,22 @@ func freeObject(obj Obj) {
 
 type StringObj struct {
 	Value string
+	Hash  uint32
 }
-func StringAsValue(value string) ObjValue {
-	return NewObjValue(&StringObj{Value: value})
+func NewStringObj(tbl *Table, value string) *StringObj {
+	hash := HashString(value)
+	interned := tbl.FindString(value, hash)
+	if interned != nil {
+		return interned
+	}
+
+	so := &StringObj{Value: value, Hash: hash}
+	tbl.Set(so, Nil)
+	return so
+}
+
+func StringAsValue(tbl *Table, value string) ObjValue {
+	return NewObjValue(NewStringObj(tbl, value))
 }
 
 func (so *StringObj) Type() ObjType { return ObjString }
@@ -56,4 +69,14 @@ func IsString(value Value) bool {
 
 	vObj := value.(ObjValue).Value
 	return vObj.Type() == ObjString
+}
+
+func HashString(key string) uint32 {
+	var hash uint32 = 2166136261
+	for i := 0; i < len(key); i++ {
+		hash ^= uint32(key[i])
+		hash *= 16777619
+	}
+
+	return hash
 }

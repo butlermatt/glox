@@ -36,9 +36,9 @@ func BoolAsValue(b bool) BoolValue {
 
 // Nil Value
 type NilValue struct{}
-
 func (nv NilValue) Type() ValueType { return ValNil }
 
+// Do not confuse with nil
 var Nil = NilValue{}
 
 // Number Value
