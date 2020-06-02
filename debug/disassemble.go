@@ -32,6 +32,12 @@ func DisassembleInstruction(c *bc.Chunk, offset int) int {
 		return simpleInstruction("OP_TRUE", offset)
 	case bc.OpFalse:
 		return simpleInstruction("OP_FALSE", offset)
+	case bc.OpPop:
+		return simpleInstruction("OP_POP", offset)
+	case bc.OpGetGlobal:
+		return constantInstruction("OP_GET_GLOBAL", c, offset)
+	case bc.OpDefineGlobal:
+		return constantInstruction("OP_DEFINE_GLOBAL", c, offset)
 	case bc.OpEqual:
 		return simpleInstruction("OP_EQUAL", offset)
 	case bc.OpGreater:
@@ -50,6 +56,8 @@ func DisassembleInstruction(c *bc.Chunk, offset int) int {
 		return simpleInstruction("OP_NOT", offset)
 	case bc.OpNegate:
 		return simpleInstruction("OP_NEGATE", offset)
+	case bc.OpPrint:
+		return simpleInstruction("OP_PRINT", offset)
 	case bc.OpReturn:
 		return simpleInstruction("OP_RETURN", offset)
 	default:
@@ -66,31 +74,8 @@ func simpleInstruction(name string, offset int) int {
 func constantInstruction(name string, c *bc.Chunk, offset int) int {
 	cOff := c.Code[offset+1]
 	fmt.Printf("%-16s %4d '", name, cOff)
-	PrintValue(c.Constants.Values[cOff])
+	bc.PrintValue(c.Constants.Values[cOff])
 	fmt.Println("'")
 	return offset + 2
 }
 
-func PrintValue(value bc.Value) {
-	switch value.Type() {
-	case bc.ValBool:
-		if value == bc.True {
-			fmt.Printf("true")
-		} else {
-			fmt.Printf("false")
-		}
-	case bc.ValNil:
-		fmt.Printf("nil")
-	case bc.ValNumber:
-		fmt.Printf("%g", value.(bc.NumberValue).Value)
-	case bc.ValObj:
-		printObject(value.(bc.ObjValue).Value)
-	}
-}
-
-func printObject(value bc.Obj) {
-	switch v := value.(type) {
-	case *bc.StringObj:
-		fmt.Printf("%s", v.Value)
-	}
-}

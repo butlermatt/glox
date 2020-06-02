@@ -76,7 +76,7 @@ func NewCompiler() *Compiler {
 		{nil, c.binary, PrecComparison}, // Less
 		{nil, c.binary, PrecComparison}, // LessEq
 
-		{nil, nil, PrecNone},      // Ident
+		{c.variable, nil, PrecNone},      // Ident
 		{c.string, nil, PrecNone},      // String
 		{c.number, nil, PrecNone}, // Number
 
@@ -111,8 +111,10 @@ func (c *Compiler) Compile(tbl *bc.Table, source string, chunk *bc.Chunk) bool {
 	c.strings = tbl
 
 	c.Advance()
-	c.expression()
-	c.Consume(TokenEof, "Expected end of expression")
+
+	for !c.match(TokenEof) {
+		c.declaration()
+	}
 
 	c.endCompiler()
 	return !c.parser.hadError
@@ -174,6 +176,55 @@ func (c *Compiler) endCompiler() {
 			debug.DisassembleChunk(c.CurrentChunk(), "code")
 		}
 	}
+}
+
+func (c *Compiler) declaration() {
+	if c.match(TokenVar) {
+		c.varDeclaration()
+	} else {
+		c.statement()
+	}
+
+	if c.parser.panicMode {
+		c.synchronize()
+	}
+}
+
+func (c *Compiler) varDeclaration() {
+	global := c.parseVariable("Expect variable name.")
+
+	if c.match(TokenEqual) {
+		c.expression()
+	} else {
+		c.emitBytes(bc.OpNil)
+	}
+
+	c.Consume(TokenSemicolon, "Expect ';' after variable declaration.")
+	c.defineVariable(global)
+}
+
+func (c *Compiler) defineVariable(global byte) {
+	c.emitBytes(bc.OpDefineGlobal, global)
+}
+
+func (c *Compiler) statement() {
+	if c.match(TokenPrint) {
+		c.printStatement()
+	} else {
+		c.expressionStatement()
+	}
+}
+
+func (c *Compiler) printStatement() {
+	c.expression()
+	c.Consume(TokenSemicolon, "Expect ';' after value.")
+	c.emitBytes(bc.OpPrint)
+}
+
+func (c *Compiler) expressionStatement() {
+	c.expression()
+	c.Consume(TokenSemicolon, "Expect ';' after expression.")
+	c.emitBytes(bc.OpPop)
 }
 
 func (c *Compiler) expression() {
@@ -261,6 +312,15 @@ func (c *Compiler) string() {
 	c.emitConstant(sobj)
 }
 
+func (c *Compiler) variable() {
+	c.namedVariable(c.parser.previous)
+}
+
+func (c *Compiler) namedVariable(name Token) {
+	arg := c.identifierConstant(&name)
+	c.emitBytes(bc.OpGetGlobal, arg)
+}
+
 func (c *Compiler) parsePrecedence(prec Precedence) {
 	c.Advance()
 	rule := c.rules[c.parser.previous.Type]
@@ -276,6 +336,27 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 		infix := c.rules[c.parser.previous.Type].infix
 		infix()
 	}
+}
+
+func (c *Compiler) parseVariable(msg string) byte {
+	c.Consume(TokenIdent, msg)
+	return c.identifierConstant(&c.parser.previous)
+}
+
+func (c *Compiler) identifierConstant(token *Token) byte {
+	return c.MakeConstant(bc.StringAsValue(c.strings, token.Lexeme))
+}
+
+func (c *Compiler) match(tt TokenType) bool {
+	if !c.check(tt) {
+		return false
+	}
+	c.Advance()
+	return true
+}
+
+func (c *Compiler) check(tt TokenType) bool {
+	return c.parser.current.Type == tt
 }
 
 func (c *Compiler) errorAtCurrent(msg string) {
@@ -305,4 +386,23 @@ func (c *Compiler) errorAt(t Token, msg string) {
 
 	_, _ = fmt.Fprintf(os.Stderr, ": %s\n", msg)
 	c.parser.hadError = true
+}
+
+func (c *Compiler) synchronize() {
+	c.parser.panicMode = false
+
+	for c.parser.current.Type != TokenEof {
+		if c.parser.previous.Type == TokenSemicolon {
+			return
+		}
+
+		switch c.parser.current.Type {
+		case TokenClass, TokenFun, TokenVar, TokenFor, TokenIf, TokenWhile, TokenPrint, TokenReturn:
+			return
+		default:
+			// do nothing
+		}
+
+		c.Advance()
+	}
 }

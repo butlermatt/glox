@@ -47,6 +47,7 @@ type StringObj struct {
 func NewStringObj(tbl *Table, value string) *StringObj {
 	hash := HashString(value)
 	interned := tbl.FindString(value, hash)
+	tbl.dumpTable("New String Obj")
 	if interned != nil {
 		return interned
 	}

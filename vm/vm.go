@@ -25,13 +25,14 @@ type VM struct {
 	Stack    [STACK_MAX]bc.Value
 	sTop     int
 	strings  *bc.Table
+	globals  *bc.Table
 
 	compiler *scanner.Compiler
 }
 
 func New() *VM {
 	bc.Objects = nil
-	return &VM{strings: bc.NewTable(), compiler: scanner.NewCompiler()}
+	return &VM{strings: bc.NewTable(), globals: bc.NewTable(), compiler: scanner.NewCompiler()}
 }
 
 func (vm *VM) Free() {
@@ -42,6 +43,7 @@ func (vm *VM) Free() {
 
 	bc.FreeObjects()
 	vm.strings.Free()
+	vm.globals.Free()
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
@@ -80,7 +82,7 @@ func (vm *VM) run() InterpretResult {
 			fmt.Printf("          ")
 			for i := 0; i < vm.sTop; i++ {
 				fmt.Printf("[ ")
-				debug.PrintValue(vm.Stack[i])
+				bc.PrintValue(vm.Stack[i])
 				fmt.Printf(" ]")
 			}
 			fmt.Println()
@@ -100,6 +102,20 @@ func (vm *VM) run() InterpretResult {
 			vm.push(bc.True)
 		case bc.OpFalse:
 			vm.push(bc.False)
+		case bc.OpPop:
+			vm.pop()
+		case bc.OpGetGlobal:
+			name := vm.readString()
+			value, ok := vm.globals.Get(name)
+			if !ok {
+				vm.runtimeError("Undefined variable %q. ", name.Value)
+				return InterpretRuntimeError
+			}
+			vm.push(value)
+		case bc.OpDefineGlobal:
+			val := vm.readString()
+			vm.globals.Set(val, vm.peek(0))
+			vm.pop()
 		case bc.OpEqual:
 			r := vm.pop()
 			l := vm.pop()
@@ -135,12 +151,20 @@ func (vm *VM) run() InterpretResult {
 			}
 			obj := vm.pop().(bc.NumberValue)
 			vm.push(bc.NumberValue{Value: -(obj.Value)})
-		case bc.OpReturn:
-			debug.PrintValue(vm.pop())
+		case bc.OpPrint:
+			bc.PrintValue(vm.pop())
 			fmt.Println()
+		case bc.OpReturn:
+			// Exit Interpreter
 			return InterpretOk
 		}
 	}
+}
+
+func (vm *VM) readString() *bc.StringObj {
+	con := vm.Chunk.Constants.Values[vm.Chunk.Code[vm.ip]]
+	vm.ip++
+	return con.(bc.ObjValue).Value.(*bc.StringObj)
 }
 
 func (vm *VM) peek(distance int) bc.Value {

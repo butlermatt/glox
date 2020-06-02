@@ -7,6 +7,9 @@ const (
 	OpNil
 	OpTrue
 	OpFalse
+	OpPop
+	OpGetGlobal
+	OpDefineGlobal
 	OpEqual
 	OpGreater
 	OpLess
@@ -16,6 +19,7 @@ const (
 	OpDivide
 	OpNot
 	OpNegate
+	OpPrint
 	OpReturn
 )
 
@@ -47,8 +51,10 @@ func (c *Chunk) WriteOp(line int, op OpCode, args ...byte) {
 
 // Free clears the existing memory from the Chunk.
 func (c *Chunk) Free() {
-	c.Code = c.Code[:0]
-	c.Constants.Free()
+	if c != nil {
+		c.Code = c.Code[:0]
+		c.Constants.Free()
+	}
 }
 
 // AddConstant appends a constant to the Chunk, and returns its current index.
