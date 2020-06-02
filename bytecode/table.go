@@ -21,7 +21,6 @@ func (t *Table) Free() {
 
 func (t *Table) Get(key *StringObj) (Value, bool) {
 	fmt.Printf("Key: %v\n", key)
-	t.dumpTable("In Get")
 
 	if t.count == 0 {
 		return nil, false
