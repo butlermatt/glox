@@ -36,6 +36,7 @@ func BoolAsValue(b bool) BoolValue {
 
 // Nil Value
 type NilValue struct{}
+
 func (nv NilValue) Type() ValueType { return ValNil }
 
 // Do not confuse with nil
@@ -47,7 +48,6 @@ type NumberValue struct {
 }
 
 func (num NumberValue) Type() ValueType { return ValNumber }
-
 
 type ValueArray struct {
 	Values []Value

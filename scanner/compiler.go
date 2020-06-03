@@ -13,6 +13,7 @@ import (
 )
 
 const DEBUG_PRINT_CODE = true
+const LOCALS_MAX = 256
 
 type Parser struct {
 	current   Token
@@ -26,7 +27,16 @@ type Compiler struct {
 	parser         Parser
 	compilingChunk *bc.Chunk
 	rules          []ParseRule
-	strings 	   *bc.Table
+	strings        *bc.Table
+
+	locals     [LOCALS_MAX]Local
+	localCount int
+	scopeDepth int
+}
+
+type Local struct {
+	name  Token
+	depth int
 }
 
 type Precedence byte
@@ -76,9 +86,9 @@ func NewCompiler() *Compiler {
 		{nil, c.binary, PrecComparison}, // Less
 		{nil, c.binary, PrecComparison}, // LessEq
 
-		{c.variable, nil, PrecNone},      // Ident
-		{c.string, nil, PrecNone},      // String
-		{c.number, nil, PrecNone}, // Number
+		{c.variable, nil, PrecNone}, // Ident
+		{c.string, nil, PrecNone},   // String
+		{c.number, nil, PrecNone},   // Number
 
 		{nil, nil, PrecNone},       // And
 		{nil, nil, PrecNone},       // Class
@@ -168,6 +178,19 @@ func (c *Compiler) emitConstant(value bc.Value) {
 	c.emitBytes(bc.OpConstant, c.MakeConstant(value))
 }
 
+func (c *Compiler) beginScope() {
+	c.scopeDepth++
+}
+
+func (c *Compiler) endScope() {
+	c.scopeDepth--
+
+	for c.localCount > 0 && c.locals[c.localCount - 1].depth > c.scopeDepth {
+		c.emitBytes(bc.OpPop)
+		c.localCount--
+	}
+}
+
 func (c *Compiler) endCompiler() {
 	c.emitReturn()
 
@@ -203,14 +226,46 @@ func (c *Compiler) varDeclaration() {
 	c.defineVariable(global)
 }
 
+func (c *Compiler) declareVariable() {
+	if c.scopeDepth == 0 {
+		return
+	}
+
+	name := &c.parser.previous
+
+	for i := c.localCount - 1; i >= 0; i-- {
+		local := &c.locals[i]
+		if local.depth != -1 && local.depth < c.scopeDepth {
+			break
+		}
+
+		if name.Lexeme == local.name.Lexeme {
+			c.error("Variable with this name already declared in this scope")
+		}
+	}
+
+	c.addLocal(*name)
+}
+
 func (c *Compiler) defineVariable(global byte) {
+	if c.scopeDepth > 0 {
+		// Don't emit bytes for local variables
+		c.markInitialized()
+		return
+	}
+
 	c.emitBytes(bc.OpDefineGlobal, global)
 }
 
 func (c *Compiler) statement() {
-	if c.match(TokenPrint) {
+	switch {
+	case c.match(TokenPrint):
 		c.printStatement()
-	} else {
+	case c.match(TokenLBrace):
+		c.beginScope()
+		c.block()
+		c.endScope()
+	default:
 		c.expressionStatement()
 	}
 }
@@ -225,6 +280,14 @@ func (c *Compiler) expressionStatement() {
 	c.expression()
 	c.Consume(TokenSemicolon, "Expect ';' after expression.")
 	c.emitBytes(bc.OpPop)
+}
+
+func (c *Compiler) block() {
+	for !c.check(TokenRBrace) && !c.check(TokenEof) {
+		c.declaration()
+	}
+
+	c.Consume(TokenRBrace, "Expect '}' after block.")
 }
 
 func (c *Compiler) expression() {
@@ -307,7 +370,7 @@ func (c *Compiler) literal(_ bool) {
 }
 
 func (c *Compiler) string(_ bool) {
-	str := c.parser.previous.Lexeme[1:len(c.parser.previous.Lexeme) - 1]
+	str := c.parser.previous.Lexeme[1 : len(c.parser.previous.Lexeme)-1]
 	sobj := bc.StringAsValue(c.strings, str)
 	c.emitConstant(sobj)
 }
@@ -317,13 +380,22 @@ func (c *Compiler) variable(canAssign bool) {
 }
 
 func (c *Compiler) namedVariable(name Token, canAssign bool) {
-	arg := c.identifierConstant(&name)
+	var getOp, setOp bc.OpCode
+	arg := c.resolveLocal(&name)
+	if arg != -1 {
+		getOp = bc.OpGetLocal
+		setOp = bc.OpSetLocal
+	} else {
+		arg = c.identifierConstant(&name)
+		getOp = bc.OpGetGlobal
+		setOp = bc.OpSetGlobal
+	}
 
 	if canAssign && c.match(TokenEqual) {
 		c.expression()
-		c.emitBytes(bc.OpSetGlobal, arg)
+		c.emitBytes(setOp, byte(arg))
 	} else {
-		c.emitBytes(bc.OpGetGlobal, arg)
+		c.emitBytes(getOp, byte(arg))
 	}
 }
 
@@ -351,11 +423,33 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 
 func (c *Compiler) parseVariable(msg string) byte {
 	c.Consume(TokenIdent, msg)
-	return c.identifierConstant(&c.parser.previous)
+
+	c.declareVariable()
+	if c.scopeDepth > 0 {
+		return 0
+	}
+	return byte(c.identifierConstant(&c.parser.previous))
 }
 
-func (c *Compiler) identifierConstant(token *Token) byte {
-	return c.MakeConstant(bc.StringAsValue(c.strings, token.Lexeme))
+func (c *Compiler) markInitialized() {
+	c.locals[c.localCount - 1].depth = c.scopeDepth
+}
+
+func (c *Compiler) identifierConstant(token *Token) int {
+	return int(c.MakeConstant(bc.StringAsValue(c.strings, token.Lexeme)))
+}
+
+func (c *Compiler) addLocal(name Token) {
+	if c.localCount == LOCALS_MAX {
+		c.error("Too many local variables in scope.")
+		return
+	}
+
+	local := &c.locals[c.localCount]
+	c.localCount++
+
+	local.name = name
+	local.depth = -1
 }
 
 func (c *Compiler) match(tt TokenType) bool {
@@ -397,6 +491,19 @@ func (c *Compiler) errorAt(t Token, msg string) {
 
 	_, _ = fmt.Fprintf(os.Stderr, ": %s\n", msg)
 	c.parser.hadError = true
+}
+
+func (c *Compiler) resolveLocal(name *Token) int {
+	for i := c.localCount - 1; i >= 0; i-- {
+		if local := &c.locals[i]; local.name.Lexeme == name.Lexeme {
+			if local.depth == -1 {
+				c.error("Cannot read local variable in its own initializer.")
+			}
+			return i
+		}
+	}
+
+	return -1
 }
 
 func (c *Compiler) synchronize() {

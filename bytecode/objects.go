@@ -1,7 +1,8 @@
 package bytecode
 
 type ObjType byte
-const(
+
+const (
 	ObjString ObjType = iota
 )
 
@@ -14,6 +15,7 @@ type ObjValue struct {
 	Value Obj
 	Next  *ObjValue
 }
+
 func (o ObjValue) Type() ValueType { return ValObj }
 func NewObjValue(obj Obj) ObjValue {
 	o := ObjValue{Value: obj, Next: Objects}
@@ -22,6 +24,7 @@ func NewObjValue(obj Obj) ObjValue {
 }
 
 var Objects *ObjValue = nil
+
 func FreeObjects() {
 	obj := Objects
 	for obj != nil {
@@ -44,6 +47,7 @@ type StringObj struct {
 	Value string
 	Hash  uint32
 }
+
 func NewStringObj(tbl *Table, value string) *StringObj {
 	hash := HashString(value)
 	interned := tbl.FindString(value, hash)

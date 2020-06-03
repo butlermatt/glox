@@ -20,12 +20,12 @@ const DEBUG_TRACE = true
 const STACK_MAX = 256
 
 type VM struct {
-	Chunk    *bc.Chunk
-	ip       int
-	Stack    [STACK_MAX]bc.Value
-	sTop     int
-	strings  *bc.Table
-	globals  *bc.Table
+	Chunk   *bc.Chunk
+	ip      int
+	Stack   [STACK_MAX]bc.Value
+	sTop    int
+	strings *bc.Table
+	globals *bc.Table
 
 	compiler *scanner.Compiler
 }
@@ -104,6 +104,14 @@ func (vm *VM) run() InterpretResult {
 			vm.push(bc.False)
 		case bc.OpPop:
 			vm.pop()
+		case bc.OpGetLocal:
+			slot := vm.Chunk.Code[vm.ip]
+			vm.ip++
+			vm.push(vm.Stack[slot])
+		case bc.OpSetLocal:
+			slot := vm.Chunk.Code[vm.ip]
+			vm.ip++
+			vm.Stack[slot] = vm.peek(0)
 		case bc.OpGetGlobal:
 			name := vm.readString()
 			value, ok := vm.globals.Get(name)
@@ -208,9 +216,9 @@ func (vm *VM) binaryOp(op bc.OpCode) InterpretResult {
 
 func (vm *VM) concatenate() {
 	right := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
-	left  := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
+	left := vm.pop().(bc.ObjValue).Value.(*bc.StringObj)
 
-	vm.push(bc.StringAsValue(vm.strings, left.Value + right.Value))
+	vm.push(bc.StringAsValue(vm.strings, left.Value+right.Value))
 }
 
 func (vm *VM) runtimeError(msg string, args ...interface{}) {

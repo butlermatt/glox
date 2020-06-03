@@ -8,6 +8,8 @@ const (
 	OpTrue
 	OpFalse
 	OpPop
+	OpGetLocal
+	OpSetLocal
 	OpGetGlobal
 	OpDefineGlobal
 	OpSetGlobal

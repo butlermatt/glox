@@ -9,6 +9,7 @@ type Table struct {
 	cap     int
 	Entries []*Entry
 }
+
 func NewTable() *Table {
 	return &Table{}
 }
@@ -53,7 +54,7 @@ func (t *Table) dumpTable(where string) {
 }
 
 func (t *Table) Set(key *StringObj, value Value) bool {
-	if float64(t.count + 1) > float64(t.cap) * tableMaxLoad {
+	if float64(t.count+1) > float64(t.cap)*tableMaxLoad {
 		var c int
 		if t.cap < 8 {
 			c = 8
@@ -168,12 +169,13 @@ func findEntry(entries []*Entry, key *StringObj) *Entry {
 			}
 		}
 
-		if e.Key == key { return e }
+		if e.Key == key {
+			return e
+		}
 
 		ind = (ind + 1) % uint32(len(entries))
 	}
 }
-
 
 type Entry struct {
 	Key   *StringObj
