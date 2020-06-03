@@ -1,7 +1,5 @@
 package scanner
 
-import "fmt"
-
 type Scanner struct {
 	source  string
 	start   int
@@ -227,7 +225,6 @@ func (s *Scanner) identifierType() TokenType {
 }
 
 func (s *Scanner) checkKeyword(keyword string, tok TokenType) TokenType {
-	fmt.Printf("%s\n", s.source[s.start:s.current])
 	if s.source[s.start:s.current] == keyword {
 		return tok
 	}

@@ -116,6 +116,13 @@ func (vm *VM) run() InterpretResult {
 			val := vm.readString()
 			vm.globals.Set(val, vm.peek(0))
 			vm.pop()
+		case bc.OpSetGlobal:
+			name := vm.readString()
+			if vm.globals.Set(name, vm.peek(0)) { // isNew is true means not an existing variable
+				vm.globals.Delete(name)
+				vm.runtimeError("Undefined variable %q.", name.Value)
+				return InterpretRuntimeError
+			}
 		case bc.OpEqual:
 			r := vm.pop()
 			l := vm.pop()

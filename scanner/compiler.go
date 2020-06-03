@@ -45,7 +45,7 @@ const (
 	PrecPrimary
 )
 
-type ParseFn func()
+type ParseFn func(canAssign bool)
 type ParseRule struct {
 	prefix ParseFn
 	infix  ParseFn
@@ -231,7 +231,7 @@ func (c *Compiler) expression() {
 	c.parsePrecedence(PrecAssign)
 }
 
-func (c *Compiler) number() {
+func (c *Compiler) number(_ bool) {
 	value, err := strconv.ParseFloat(c.parser.previous.Lexeme, 64)
 	if err != nil {
 		c.error("failed to parse number")
@@ -241,12 +241,12 @@ func (c *Compiler) number() {
 	c.emitConstant(bc.NumberValue{Value: value})
 }
 
-func (c *Compiler) grouping() {
+func (c *Compiler) grouping(_ bool) {
 	c.expression()
 	c.Consume(TokenRParen, "Expect ')' after expression.")
 }
 
-func (c *Compiler) unary() {
+func (c *Compiler) unary(_ bool) {
 	operType := c.parser.previous.Type
 
 	c.parsePrecedence(PrecUnary)
@@ -261,7 +261,7 @@ func (c *Compiler) unary() {
 	}
 }
 
-func (c *Compiler) binary() {
+func (c *Compiler) binary(_ bool) {
 	operType := c.parser.previous.Type
 
 	rule := c.rules[operType]
@@ -293,7 +293,7 @@ func (c *Compiler) binary() {
 	}
 }
 
-func (c *Compiler) literal() {
+func (c *Compiler) literal(_ bool) {
 	switch c.parser.previous.Type {
 	case TokenFalse:
 		c.emitBytes(bc.OpFalse)
@@ -306,19 +306,25 @@ func (c *Compiler) literal() {
 	}
 }
 
-func (c *Compiler) string() {
+func (c *Compiler) string(_ bool) {
 	str := c.parser.previous.Lexeme[1:len(c.parser.previous.Lexeme) - 1]
 	sobj := bc.StringAsValue(c.strings, str)
 	c.emitConstant(sobj)
 }
 
-func (c *Compiler) variable() {
-	c.namedVariable(c.parser.previous)
+func (c *Compiler) variable(canAssign bool) {
+	c.namedVariable(c.parser.previous, canAssign)
 }
 
-func (c *Compiler) namedVariable(name Token) {
+func (c *Compiler) namedVariable(name Token, canAssign bool) {
 	arg := c.identifierConstant(&name)
-	c.emitBytes(bc.OpGetGlobal, arg)
+
+	if canAssign && c.match(TokenEqual) {
+		c.expression()
+		c.emitBytes(bc.OpSetGlobal, arg)
+	} else {
+		c.emitBytes(bc.OpGetGlobal, arg)
+	}
 }
 
 func (c *Compiler) parsePrecedence(prec Precedence) {
@@ -329,12 +335,17 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 		return
 	}
 
-	rule.prefix()
+	canAssign := prec <= PrecAssign
+	rule.prefix(canAssign)
 
 	for prec <= c.rules[c.parser.current.Type].prec {
 		c.Advance()
 		infix := c.rules[c.parser.previous.Type].infix
-		infix()
+		infix(canAssign)
+	}
+
+	if canAssign && c.match(TokenEqual) {
+		c.error("Invalid assignment target.")
 	}
 }
 

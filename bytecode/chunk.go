@@ -10,6 +10,7 @@ const (
 	OpPop
 	OpGetGlobal
 	OpDefineGlobal
+	OpSetGlobal
 	OpEqual
 	OpGreater
 	OpLess
